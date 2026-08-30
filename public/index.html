@@ -841,7 +841,77 @@
   .habit-cell.is-off { border: none; background: transparent; cursor: default; opacity: 0.3; }
   .habit-cell.is-off:hover { border-color: transparent; }
 
-  .board[hidden], .habits-section[hidden], .month-summary-section[hidden] { display: none; }
+  .board[hidden], .habits-section[hidden], .month-summary-section[hidden], .future-log-section[hidden] { display: none; }
+
+  /* Future log */
+  .future-log-section { margin-top: 20px; }
+  .future-range-label {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.86rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .future-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 940px) {
+    .future-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 620px) {
+    .future-grid { grid-template-columns: 1fr; }
+  }
+
+  .future-month-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .future-month-card.is-current-month { border-color: var(--amber); }
+
+  .future-month-title {
+    margin: 0;
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: capitalize;
+  }
+  .future-month-card.is-current-month .future-month-title { color: var(--amber); }
+
+  .future-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+  .future-item input[type="checkbox"] {
+    margin-top: 2px;
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    flex: none;
+  }
+  .future-item .item-title { flex: 1; word-break: break-word; }
+  .future-item.is-done .item-title { text-decoration: line-through; color: var(--muted); }
+
+  #futureForm select {
+    flex: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 0.86rem;
+    color: var(--ink);
+    text-transform: capitalize;
+  }
 
   /* Monthly summary */
   .month-summary-section { margin-top: 20px; }
@@ -1002,6 +1072,7 @@
       <button type="button" class="is-active" id="viewDayBtn">Día</button>
       <button type="button" id="viewWeekBtn">Semana</button>
       <button type="button" id="viewMonthBtn">Mes</button>
+      <button type="button" id="viewFutureBtn">Futuro</button>
     </div>
     <div class="save-status" id="saveStatus" data-state="idle">
       <span class="dot"></span>
@@ -1137,6 +1208,24 @@
     <div class="stat-tiles" id="statTiles"></div>
     <div class="summary-habits" id="summaryHabits"></div>
   </section>
+
+  <section class="col future-log-section" id="futureLogSection" aria-label="Future log" hidden>
+    <div class="col-head summary-head">
+      <h2>Future Log</h2>
+      <div class="month-nav">
+        <button class="nav-btn" id="prevFutureRange" type="button" aria-label="6 meses anteriores">‹</button>
+        <span class="future-range-label" id="futureRangeLabel"></span>
+        <button class="nav-btn" id="nextFutureRange" type="button" aria-label="6 meses siguientes">›</button>
+      </div>
+      <button class="ghost-btn" id="futureTodayBtn" type="button">Hoy</button>
+    </div>
+    <div class="future-grid" id="futureGrid"></div>
+    <form class="add-form" id="futureForm">
+      <select id="futureMonthSelect"></select>
+      <input type="text" id="futureText" placeholder="Algo para planear más adelante…" required maxlength="140">
+      <button type="submit">Agregar</button>
+    </form>
+  </section>
 </div>
 
 <script>
@@ -1150,7 +1239,8 @@
   var state = null;
   var monthCursor = startOfMonth(new Date()); // first day of the visible month
   var selectedDate = isoDate(new Date());
-  var viewMode = "day"; // "day" | "week"
+  var viewMode = "day"; // "day" | "week" | "month" | "future"
+  var futureCursor = startOfMonth(new Date()); // first month of the visible 6-month future log window
   var noteMode = "write"; // "write" | "draw"
   var drawCtx = null;
   var drawing = false;
@@ -1219,6 +1309,7 @@
       notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       agenda: Array.isArray(parsed.agenda) ? parsed.agenda : [],
       habits: Array.isArray(parsed.habits) ? parsed.habits : [],
+      futureLog: Array.isArray(parsed.futureLog) ? parsed.futureLog : [],
       showDone: !!parsed.showDone
     };
     state.habits.forEach(function (h) { if (!h.days || typeof h.days !== "object") h.days = {}; });
@@ -1787,6 +1878,85 @@
     });
   }
 
+  // ---- Future log ----
+
+  var FUTURE_WINDOW = 6; // meses a la vista, como en un future log de bullet journal
+
+  function futureMonths(cursor) {
+    var out = [];
+    for (var i = 0; i < FUTURE_WINDOW; i++) {
+      out.push(new Date(cursor.getFullYear(), cursor.getMonth() + i, 1));
+    }
+    return out;
+  }
+
+  function ymKey(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"); }
+
+  function renderFutureLog() {
+    var months = futureMonths(futureCursor);
+    var first = months[0], last = months[months.length - 1];
+    document.getElementById("futureRangeLabel").textContent =
+      capitalize(MONTHS[first.getMonth()]) + " " + first.getFullYear() + " – " +
+      capitalize(MONTHS[last.getMonth()]) + " " + last.getFullYear();
+
+    var currentYm = ymKey(new Date());
+
+    var select = document.getElementById("futureMonthSelect");
+    var prevSelected = select.value;
+    select.innerHTML = "";
+    months.forEach(function (d) {
+      var ym = ymKey(d);
+      var opt = document.createElement("option");
+      opt.value = ym;
+      opt.textContent = MONTHS[d.getMonth()] + " " + d.getFullYear();
+      select.appendChild(opt);
+    });
+    if (months.some(function (d) { return ymKey(d) === prevSelected; })) select.value = prevSelected;
+
+    var grid = document.getElementById("futureGrid");
+    grid.innerHTML = "";
+    months.forEach(function (d) {
+      var ym = ymKey(d);
+      var card = document.createElement("div");
+      card.className = "future-month-card" + (ym === currentYm ? " is-current-month" : "");
+
+      var title = document.createElement("h3");
+      title.className = "future-month-title";
+      title.textContent = MONTHS[d.getMonth()] + " " + d.getFullYear();
+      card.appendChild(title);
+
+      var items = state.futureLog.filter(function (it) { return it.month === ym; });
+      if (!items.length) {
+        var empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = "Nada planeado todavía.";
+        card.appendChild(empty);
+      } else {
+        items.forEach(function (it) {
+          var row = document.createElement("div");
+          row.className = "future-item" + (it.done ? " is-done" : "");
+          row.innerHTML = '<input type="checkbox"><span class="item-title"></span>' +
+            '<button class="icon-btn" type="button">✕</button>';
+          row.querySelector(".item-title").textContent = it.text;
+          var cb = row.querySelector('input[type="checkbox"]');
+          cb.checked = !!it.done;
+          cb.setAttribute("aria-label", "Marcar como hecho: " + it.text);
+          cb.addEventListener("change", function () {
+            it.done = !it.done; renderFutureLog(); scheduleSave();
+          });
+          var del = row.querySelector(".icon-btn");
+          del.setAttribute("aria-label", "Eliminar: " + it.text);
+          del.addEventListener("click", function () {
+            state.futureLog = state.futureLog.filter(function (x) { return x.id !== it.id; });
+            renderFutureLog(); scheduleSave();
+          });
+          card.appendChild(row);
+        });
+      }
+      grid.appendChild(card);
+    });
+  }
+
   function renderAll() {
     renderMonthCalendar();
     renderWeekPanorama();
@@ -1795,17 +1965,20 @@
     renderNotes();
     renderHabits();
     renderMonthSummary();
+    renderFutureLog();
   }
 
   function setViewMode(mode) {
     viewMode = mode;
     document.getElementById("board").classList.toggle("view-week", mode === "week");
-    document.getElementById("board").hidden = mode === "month";
-    document.getElementById("habitsSection").hidden = mode === "month";
+    document.getElementById("board").hidden = mode === "month" || mode === "future";
+    document.getElementById("habitsSection").hidden = mode === "month" || mode === "future";
     document.getElementById("monthSummarySection").hidden = mode !== "month";
+    document.getElementById("futureLogSection").hidden = mode !== "future";
     document.getElementById("viewDayBtn").classList.toggle("is-active", mode === "day");
     document.getElementById("viewWeekBtn").classList.toggle("is-active", mode === "week");
     document.getElementById("viewMonthBtn").classList.toggle("is-active", mode === "month");
+    document.getElementById("viewFutureBtn").classList.toggle("is-active", mode === "future");
     renderAll();
   }
 
@@ -1847,6 +2020,28 @@
     document.getElementById("viewDayBtn").addEventListener("click", function () { setViewMode("day"); });
     document.getElementById("viewWeekBtn").addEventListener("click", function () { setViewMode("week"); });
     document.getElementById("viewMonthBtn").addEventListener("click", function () { setViewMode("month"); });
+    document.getElementById("viewFutureBtn").addEventListener("click", function () { setViewMode("future"); });
+    document.getElementById("prevFutureRange").addEventListener("click", function () {
+      futureCursor = new Date(futureCursor.getFullYear(), futureCursor.getMonth() - FUTURE_WINDOW, 1);
+      renderFutureLog();
+    });
+    document.getElementById("nextFutureRange").addEventListener("click", function () {
+      futureCursor = new Date(futureCursor.getFullYear(), futureCursor.getMonth() + FUTURE_WINDOW, 1);
+      renderFutureLog();
+    });
+    document.getElementById("futureTodayBtn").addEventListener("click", function () {
+      futureCursor = startOfMonth(new Date());
+      renderFutureLog();
+    });
+    document.getElementById("futureForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var text = document.getElementById("futureText").value.trim();
+      if (!text) return;
+      var month = document.getElementById("futureMonthSelect").value;
+      state.futureLog.push({ id: newId(), month: month, text: text, done: false });
+      document.getElementById("futureText").value = "";
+      renderFutureLog(); scheduleSave();
+    });
     document.getElementById("prevWeekBtn").addEventListener("click", function () {
       var d = parseIso(selectedDate); d.setDate(d.getDate() - 7);
       selectedDate = isoDate(d); monthCursor = startOfMonth(d);
