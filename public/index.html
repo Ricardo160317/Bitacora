@@ -816,6 +816,31 @@
   .c-chip[data-c="violet"] { --chip-color: var(--violet); }
   .c-chip[data-c="blue"] { --chip-color: var(--blue); }
 
+  .freq-picker { display: flex; align-items: center; gap: 5px; width: 100%; }
+  .freq-picker-label {
+    font-size: 0.74rem;
+    color: var(--muted);
+    margin-right: 2px;
+    flex: none;
+  }
+  .freq-chip {
+    flex: none;
+    width: 32px;
+    height: 30px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 0;
+    font-size: 0.74rem;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    cursor: pointer;
+  }
+  .freq-chip.is-active { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); }
+
+  .habit-cell.is-off { border: none; background: transparent; cursor: default; opacity: 0.3; }
+  .habit-cell.is-off:hover { border-color: transparent; }
+
   @media (max-width: 720px) {
     .habit-table-head, .habit-row { grid-template-columns: minmax(96px, 1.3fr) repeat(7, 30px) 40px 28px; }
   }
@@ -1015,6 +1040,16 @@
         <button type="button" class="c-chip" data-c="danger" aria-label="Rojo"></button>
         <button type="button" class="c-chip" data-c="violet" aria-label="Violeta"></button>
         <button type="button" class="c-chip" data-c="blue" aria-label="Azul"></button>
+      </div>
+      <div class="freq-picker" id="freqPicker">
+        <span class="freq-picker-label">Repetir:</span>
+        <button type="button" class="freq-chip is-active" data-day="1">L</button>
+        <button type="button" class="freq-chip is-active" data-day="2">M</button>
+        <button type="button" class="freq-chip is-active" data-day="3">X</button>
+        <button type="button" class="freq-chip is-active" data-day="4">J</button>
+        <button type="button" class="freq-chip is-active" data-day="5">V</button>
+        <button type="button" class="freq-chip is-active" data-day="6">S</button>
+        <button type="button" class="freq-chip is-active" data-day="0">D</button>
       </div>
       <button type="submit">Agregar</button>
     </form>
@@ -1448,13 +1483,22 @@
 
   // ---- Habits ----
 
+  // Sin frecuencia guardada (hábitos viejos) o con los 7 días marcados = todos los días.
+  function isHabitScheduled(habit, date) {
+    var freq = habit.frequency;
+    if (!freq || !freq.length || freq.length === 7) return true;
+    return freq.indexOf(date.getDay()) !== -1;
+  }
+
   function habitStreak(habit) {
     var streak = 0;
     var d = new Date();
-    while (true) {
-      var iso = isoDate(d);
-      if (!habit.days[iso]) break;
-      streak++;
+    for (var guard = 0; guard < 3650; guard++) {
+      if (isHabitScheduled(habit, d)) {
+        var iso = isoDate(d);
+        if (!habit.days[iso]) break;
+        streak++;
+      }
       d.setDate(d.getDate() - 1);
     }
     return streak;
@@ -1503,11 +1547,19 @@
       label.className = "habit-label";
       label.innerHTML = '<span class="habit-emoji">' + escapeHtml(h.emoji || "✅") + "</span><span></span>";
       label.querySelector("span:last-child").textContent = h.name;
-      label.title = h.name;
+      label.title = h.name + (h.frequency && h.frequency.length && h.frequency.length < 7 ?
+        " — " + h.frequency.slice().sort().map(function (n) { return DOW[n]; }).join(" ") : " — todos los días");
       row.appendChild(label);
 
       weekDays.forEach(function (d) {
         var iso = isoDate(d);
+        if (!isHabitScheduled(h, d)) {
+          var off = document.createElement("span");
+          off.className = "habit-cell is-off" + (iso === todayIso ? " is-today-cell" : "");
+          off.setAttribute("aria-hidden", "true");
+          row.appendChild(off);
+          return;
+        }
         var cell = document.createElement("button");
         cell.type = "button";
         var done = !!h.days[iso];
@@ -1655,14 +1707,30 @@
       });
     });
 
+    document.getElementById("freqPicker").addEventListener("click", function (e) {
+      var btn = e.target.closest(".freq-chip");
+      if (!btn) return;
+      var activeCount = document.querySelectorAll(".freq-chip.is-active").length;
+      // no dejar sin ningún día seleccionado
+      if (btn.classList.contains("is-active") && activeCount === 1) return;
+      btn.classList.toggle("is-active");
+    });
+
     document.getElementById("habitForm").addEventListener("submit", function (e) {
       e.preventDefault();
       var name = document.getElementById("habitName").value.trim();
       if (!name) return;
       var emoji = document.getElementById("habitEmoji").value.trim() || "✅";
-      state.habits.push({ id: newId(), name: name, emoji: emoji, color: activeHabitColor, days: {} });
+      var frequency = Array.prototype.map.call(
+        document.querySelectorAll(".freq-chip.is-active"),
+        function (b) { return Number(b.getAttribute("data-day")); }
+      );
+      state.habits.push({ id: newId(), name: name, emoji: emoji, color: activeHabitColor, frequency: frequency, days: {} });
       document.getElementById("habitName").value = "";
       document.getElementById("habitEmoji").value = "✅";
+      Array.prototype.forEach.call(document.querySelectorAll(".freq-chip"), function (b) {
+        b.classList.add("is-active");
+      });
       renderHabits(); scheduleSave();
     });
   }
@@ -1693,13 +1761,27 @@
     hasInk = false;
   }
 
+  var ERASER_SIZE = 26; // grosor fijo del borrador (el botón del S Pen no manda presión)
+
+  // El S Pen (y otros lápices activos) avisan que se apretó el botón borrador
+  // así: button === 5 al iniciar el trazo, o el bit 0x20 en "buttons" mientras
+  // se mantiene apretado y se pasa por encima de la pantalla.
+  function pointerIsEraser(e) {
+    return e.pointerType === "pen" && (e.button === 5 || (e.buttons & 0x20) === 0x20);
+  }
+
   function wireDrawPad() {
     var canvas = document.getElementById("drawCanvas");
+    var hintEl = document.querySelector(".draw-hint");
+    var erasing = false;
 
     canvas.addEventListener("pointerdown", function (e) {
       if (!drawCtx) return;
       drawing = true;
-      hasInk = true;
+      erasing = pointerIsEraser(e);
+      drawCtx.globalCompositeOperation = erasing ? "destination-out" : "source-over";
+      if (!erasing) hasInk = true;
+      if (hintEl) hintEl.textContent = erasing ? "Borrando…" : "Escribe con el lápiz S Pen";
       canvas.setPointerCapture(e.pointerId);
       lastPt = { x: e.offsetX, y: e.offsetY, p: e.pressure || 0.5 };
     });
@@ -1707,7 +1789,7 @@
     canvas.addEventListener("pointermove", function (e) {
       if (!drawing || !drawCtx) return;
       var pt = { x: e.offsetX, y: e.offsetY, p: e.pressure || 0.5 };
-      drawCtx.lineWidth = Math.max(1.2, (pt.p || 0.5) * 4.5);
+      drawCtx.lineWidth = erasing ? ERASER_SIZE : Math.max(1.2, (pt.p || 0.5) * 4.5);
       drawCtx.beginPath();
       drawCtx.moveTo(lastPt.x, lastPt.y);
       drawCtx.lineTo(pt.x, pt.y);
@@ -1715,7 +1797,12 @@
       lastPt = pt;
     });
 
-    function endStroke() { drawing = false; }
+    function endStroke() {
+      drawing = false;
+      erasing = false;
+      if (drawCtx) drawCtx.globalCompositeOperation = "source-over";
+      if (hintEl) hintEl.textContent = "Escribe con el lápiz S Pen";
+    }
     canvas.addEventListener("pointerup", endStroke);
     canvas.addEventListener("pointercancel", endStroke);
     canvas.addEventListener("pointerleave", endStroke);
