@@ -30,6 +30,10 @@
     --amber-soft: #f5e6d0;
     --danger: #b23a2e;
     --danger-soft: #f6e1dc;
+    --violet: #6a5b9e;
+    --violet-soft: #e7e2f2;
+    --blue: #2f6f8f;
+    --blue-soft: #dcebf0;
     --shadow: 0 1px 2px rgba(36,38,29,0.06), 0 6px 16px -8px rgba(36,38,29,0.12);
     color-scheme: light;
   }
@@ -49,6 +53,10 @@
       --amber-soft: #3a2f1c;
       --danger: #e2685a;
       --danger-soft: #3a2420;
+      --violet: #a89bd6;
+      --violet-soft: #322c47;
+      --blue: #7fb8d6;
+      --blue-soft: #1f333c;
       --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 24px -10px rgba(0,0,0,0.45);
       color-scheme: dark;
     }
@@ -68,6 +76,10 @@
     --amber-soft: #3a2f1c;
     --danger: #e2685a;
     --danger-soft: #3a2420;
+    --violet: #a89bd6;
+    --violet-soft: #322c47;
+    --blue: #7fb8d6;
+    --blue-soft: #1f333c;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 24px -10px rgba(0,0,0,0.45);
     color-scheme: dark;
   }
@@ -695,6 +707,119 @@
     border: 1px solid var(--border);
   }
 
+  /* Habit tracker */
+  .habits-section { margin-top: 20px; }
+
+  .habits-head-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .habits-week-label {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .habit-table { display: flex; flex-direction: column; gap: 6px; overflow-x: auto; }
+
+  .habit-table-head, .habit-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1.5fr) repeat(7, minmax(34px, 1fr)) 44px 32px;
+    align-items: center;
+    gap: 6px;
+    min-width: 480px;
+  }
+
+  .habit-table-head span {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.66rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+  .habit-table-head .habit-col-name { text-align: left; }
+  .habit-table-head .habit-col-day { display: flex; flex-direction: column; gap: 1px; }
+  .habit-table-head .habit-col-day .n { font-size: 0.74rem; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .habit-table-head .habit-col-day.is-today { color: var(--amber); }
+  .habit-table-head .habit-col-day.is-today .n { color: var(--amber); }
+
+  .habit-row {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 7px 6px;
+  }
+
+  .habit-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.86rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .habit-label .habit-emoji { flex: none; font-size: 1rem; }
+
+  .habit-cell {
+    justify-self: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    color: transparent;
+    font-size: 0.8rem;
+  }
+  .habit-cell:hover { border-color: var(--muted); }
+  .habit-cell.is-done { border-color: transparent; color: var(--accent-ink); }
+  .habit-cell.is-today-cell { border-color: var(--amber); }
+
+  .habit-streak {
+    justify-self: center;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .habit-streak.has-streak { color: var(--amber); font-weight: 600; }
+
+  .habit-form { align-items: center; }
+  .habit-emoji-input {
+    flex: none !important;
+    width: 52px !important;
+    text-align: center;
+    font-size: 1.05rem;
+  }
+  .color-picker { display: flex; gap: 6px; flex: none; }
+  .c-chip {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: var(--chip-color);
+    cursor: pointer;
+    padding: 0;
+  }
+  .c-chip.is-active { border-color: var(--ink); }
+  .c-chip[data-c="accent"] { --chip-color: var(--accent); }
+  .c-chip[data-c="amber"] { --chip-color: var(--amber); }
+  .c-chip[data-c="danger"] { --chip-color: var(--danger); }
+  .c-chip[data-c="violet"] { --chip-color: var(--violet); }
+  .c-chip[data-c="blue"] { --chip-color: var(--blue); }
+
+  @media (max-width: 720px) {
+    .habit-table-head, .habit-row { grid-template-columns: minmax(96px, 1.3fr) repeat(7, 30px) 40px 28px; }
+  }
+
   /* Login overlay */
   .login-overlay {
     position: fixed; inset: 0;
@@ -869,6 +994,31 @@
       <ul class="note-list" id="noteList"></ul>
     </section>
   </main>
+
+  <section class="col habits-section" aria-label="Hábitos">
+    <div class="habits-head-row">
+      <div class="col-head" style="flex:1;">
+        <h2>Hábitos</h2>
+      </div>
+      <span class="habits-week-label" id="habitsWeekLabel"></span>
+    </div>
+    <div class="habit-table">
+      <div class="habit-table-head" id="habitTableHead"></div>
+      <div id="habitRows"></div>
+    </div>
+    <form class="add-form habit-form" id="habitForm">
+      <input type="text" id="habitEmoji" class="habit-emoji-input" maxlength="4" placeholder="✅" value="✅">
+      <input type="text" id="habitName" placeholder="Nuevo hábito… (ej. Tomar agua)" required maxlength="60">
+      <div class="color-picker" id="colorPicker">
+        <button type="button" class="c-chip is-active" data-c="accent" aria-label="Verde"></button>
+        <button type="button" class="c-chip" data-c="amber" aria-label="Ámbar"></button>
+        <button type="button" class="c-chip" data-c="danger" aria-label="Rojo"></button>
+        <button type="button" class="c-chip" data-c="violet" aria-label="Violeta"></button>
+        <button type="button" class="c-chip" data-c="blue" aria-label="Azul"></button>
+      </div>
+      <button type="submit">Agregar</button>
+    </form>
+  </section>
 </div>
 
 <script>
@@ -950,8 +1100,10 @@
       tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
       notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       agenda: Array.isArray(parsed.agenda) ? parsed.agenda : [],
+      habits: Array.isArray(parsed.habits) ? parsed.habits : [],
       showDone: !!parsed.showDone
     };
+    state.habits.forEach(function (h) { if (!h.days || typeof h.days !== "object") h.days = {}; });
     rolloverTasks();
   }
 
@@ -1294,12 +1446,112 @@
     });
   }
 
+  // ---- Habits ----
+
+  function habitStreak(habit) {
+    var streak = 0;
+    var d = new Date();
+    while (true) {
+      var iso = isoDate(d);
+      if (!habit.days[iso]) break;
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function renderHabits() {
+    var monday = startOfWeek(parseIso(selectedDate));
+    var weekDays = [];
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(monday); d.setDate(monday.getDate() + i);
+      weekDays.push(d);
+    }
+    var sunday = weekDays[6];
+    document.getElementById("habitsWeekLabel").textContent =
+      weekDays[0].getDate() + " – " + sunday.getDate() + " de " + MONTHS[sunday.getMonth()];
+
+    var todayIso = isoDate(new Date());
+
+    var head = document.getElementById("habitTableHead");
+    head.innerHTML = '<span class="habit-col-name"></span>';
+    weekDays.forEach(function (d) {
+      var iso = isoDate(d);
+      var col = document.createElement("span");
+      col.className = "habit-col-day" + (iso === todayIso ? " is-today" : "");
+      col.innerHTML = DOW[d.getDay()] + '<span class="n">' + d.getDate() + "</span>";
+      head.appendChild(col);
+    });
+    var streakHead = document.createElement("span");
+    streakHead.textContent = "🔥";
+    head.appendChild(streakHead);
+    head.appendChild(document.createElement("span"));
+
+    var rowsWrap = document.getElementById("habitRows");
+    rowsWrap.innerHTML = "";
+
+    if (!state.habits.length) {
+      rowsWrap.innerHTML = '<div class="empty-state">Sin hábitos todavía. Agrega el primero abajo.</div>';
+      return;
+    }
+
+    state.habits.forEach(function (h) {
+      var row = document.createElement("div");
+      row.className = "habit-row";
+
+      var label = document.createElement("span");
+      label.className = "habit-label";
+      label.innerHTML = '<span class="habit-emoji">' + escapeHtml(h.emoji || "✅") + "</span><span></span>";
+      label.querySelector("span:last-child").textContent = h.name;
+      label.title = h.name;
+      row.appendChild(label);
+
+      weekDays.forEach(function (d) {
+        var iso = isoDate(d);
+        var cell = document.createElement("button");
+        cell.type = "button";
+        var done = !!h.days[iso];
+        cell.className = "habit-cell" + (done ? " is-done" : "") + (iso === todayIso ? " is-today-cell" : "");
+        if (done) cell.style.background = "var(--" + (h.color || "accent") + ")";
+        cell.textContent = done ? "✓" : "";
+        cell.setAttribute("aria-label", h.name + " — " + iso + (done ? " (hecho)" : " (pendiente)"));
+        cell.addEventListener("click", function () {
+          if (h.days[iso]) delete h.days[iso];
+          else h.days[iso] = true;
+          renderHabits();
+          scheduleSave();
+        });
+        row.appendChild(cell);
+      });
+
+      var streakEl = document.createElement("span");
+      var streak = habitStreak(h);
+      streakEl.className = "habit-streak" + (streak > 0 ? " has-streak" : "");
+      streakEl.textContent = streak > 0 ? streak : "—";
+      row.appendChild(streakEl);
+
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "icon-btn";
+      del.textContent = "✕";
+      del.setAttribute("aria-label", "Eliminar hábito: " + h.name);
+      del.addEventListener("click", function () {
+        state.habits = state.habits.filter(function (x) { return x.id !== h.id; });
+        renderHabits(); scheduleSave();
+      });
+      row.appendChild(del);
+
+      rowsWrap.appendChild(row);
+    });
+  }
+
   function renderAll() {
     renderMonthCalendar();
     renderWeekPanorama();
     renderAgenda();
     renderTasks();
     renderNotes();
+    renderHabits();
   }
 
   function setViewMode(mode) {
@@ -1336,17 +1588,17 @@
     document.getElementById("prevWeekBtn").addEventListener("click", function () {
       var d = parseIso(selectedDate); d.setDate(d.getDate() - 7);
       selectedDate = isoDate(d); monthCursor = startOfMonth(d);
-      renderWeekPanorama(); renderMonthCalendar();
+      renderWeekPanorama(); renderMonthCalendar(); renderHabits();
     });
     document.getElementById("nextWeekBtn").addEventListener("click", function () {
       var d = parseIso(selectedDate); d.setDate(d.getDate() + 7);
       selectedDate = isoDate(d); monthCursor = startOfMonth(d);
-      renderWeekPanorama(); renderMonthCalendar();
+      renderWeekPanorama(); renderMonthCalendar(); renderHabits();
     });
     document.getElementById("weekTodayBtn").addEventListener("click", function () {
       var today = new Date();
       selectedDate = isoDate(today); monthCursor = startOfMonth(today);
-      renderWeekPanorama(); renderMonthCalendar();
+      renderWeekPanorama(); renderMonthCalendar(); renderHabits();
     });
 
     document.getElementById("agendaForm").addEventListener("submit", function (e) {
@@ -1392,6 +1644,27 @@
     document.getElementById("tabWrite").addEventListener("click", function () { setNoteMode("write"); });
     document.getElementById("tabDraw").addEventListener("click", function () { setNoteMode("draw"); });
     wireDrawPad();
+
+    var activeHabitColor = "accent";
+    document.getElementById("colorPicker").addEventListener("click", function (e) {
+      var btn = e.target.closest(".c-chip");
+      if (!btn) return;
+      activeHabitColor = btn.getAttribute("data-c");
+      Array.prototype.forEach.call(document.querySelectorAll(".c-chip"), function (b) {
+        b.classList.toggle("is-active", b === btn);
+      });
+    });
+
+    document.getElementById("habitForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var name = document.getElementById("habitName").value.trim();
+      if (!name) return;
+      var emoji = document.getElementById("habitEmoji").value.trim() || "✅";
+      state.habits.push({ id: newId(), name: name, emoji: emoji, color: activeHabitColor, days: {} });
+      document.getElementById("habitName").value = "";
+      document.getElementById("habitEmoji").value = "✅";
+      renderHabits(); scheduleSave();
+    });
   }
 
   function setNoteMode(mode) {

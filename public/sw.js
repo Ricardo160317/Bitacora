@@ -3,7 +3,7 @@
 // van directo al servidor, para que veas lo mismo en la tablet, el celular
 // y la PC.
 
-var CACHE_NAME = "bitacora-cache-v2";
+var CACHE_NAME = "bitacora-cache-v3";
 var FILES_TO_CACHE = [
   "/",
   "/manifest.json",

@@ -37,7 +37,7 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-const DEFAULT_STATE = { tasks: [], notes: [], agenda: [], showDone: false };
+const DEFAULT_STATE = { tasks: [], notes: [], agenda: [], habits: [], showDone: false };
 
 async function ensureTable() {
   await pool.query(`
