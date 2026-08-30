@@ -841,6 +841,75 @@
   .habit-cell.is-off { border: none; background: transparent; cursor: default; opacity: 0.3; }
   .habit-cell.is-off:hover { border-color: transparent; }
 
+  .board[hidden], .habits-section[hidden], .month-summary-section[hidden] { display: none; }
+
+  /* Monthly summary */
+  .month-summary-section { margin-top: 20px; }
+  .summary-head { flex-wrap: wrap; gap: 10px; }
+
+  .stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  .stat-tile {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .stat-tile .stat-value {
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 1.55rem;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-tile .stat-label { font-size: 0.76rem; color: var(--muted); }
+
+  .summary-habits { display: flex; flex-direction: column; gap: 14px; }
+  .summary-habit { display: flex; flex-direction: column; gap: 7px; }
+  .summary-habit-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .summary-habit-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .summary-habit-rate {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .month-dots { display: flex; flex-wrap: wrap; gap: 4px; }
+  .month-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 4px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    flex: none;
+  }
+  .month-dot.is-done { border-color: transparent; }
+  .month-dot.is-off { opacity: 0.25; border-style: dashed; }
+  .month-dot.is-missed { border-color: var(--danger); }
+  .month-dot.is-today { box-shadow: 0 0 0 2px var(--amber); }
+
+  @media (max-width: 720px) {
+    .month-dot { width: 11px; height: 11px; }
+  }
+
   @media (max-width: 720px) {
     .habit-table-head, .habit-row { grid-template-columns: minmax(96px, 1.3fr) repeat(7, 30px) 40px 28px; }
   }
@@ -932,6 +1001,7 @@
     <div class="view-toggle" id="viewToggle">
       <button type="button" class="is-active" id="viewDayBtn">Día</button>
       <button type="button" id="viewWeekBtn">Semana</button>
+      <button type="button" id="viewMonthBtn">Mes</button>
     </div>
     <div class="save-status" id="saveStatus" data-state="idle">
       <span class="dot"></span>
@@ -1020,7 +1090,7 @@
     </section>
   </main>
 
-  <section class="col habits-section" aria-label="Hábitos">
+  <section class="col habits-section" id="habitsSection" aria-label="Hábitos">
     <div class="habits-head-row">
       <div class="col-head" style="flex:1;">
         <h2>Hábitos</h2>
@@ -1053,6 +1123,19 @@
       </div>
       <button type="submit">Agregar</button>
     </form>
+  </section>
+
+  <section class="col month-summary-section" id="monthSummarySection" aria-label="Resumen mensual" hidden>
+    <div class="col-head summary-head">
+      <h2 id="summaryTitle">Resumen</h2>
+      <div class="month-nav">
+        <button class="nav-btn" id="prevSummaryMonth" type="button" aria-label="Mes anterior">‹</button>
+        <button class="ghost-btn" id="summaryTodayBtn" type="button">Hoy</button>
+        <button class="nav-btn" id="nextSummaryMonth" type="button" aria-label="Mes siguiente">›</button>
+      </div>
+    </div>
+    <div class="stat-tiles" id="statTiles"></div>
+    <div class="summary-habits" id="summaryHabits"></div>
   </section>
 </div>
 
@@ -1597,6 +1680,113 @@
     });
   }
 
+  // ---- Monthly summary (collector) ----
+
+  function daysOfMonth(cursor) {
+    var y = cursor.getFullYear(), m = cursor.getMonth();
+    var count = new Date(y, m + 1, 0).getDate();
+    var out = [];
+    for (var i = 1; i <= count; i++) out.push(new Date(y, m, i));
+    return out;
+  }
+
+  function monthPrefix(cursor) {
+    return cursor.getFullYear() + "-" + String(cursor.getMonth() + 1).padStart(2, "0");
+  }
+
+  function addStatTile(container, value, label) {
+    var tile = document.createElement("div");
+    tile.className = "stat-tile";
+    tile.innerHTML = '<span class="stat-value"></span><span class="stat-label"></span>';
+    tile.querySelector(".stat-value").textContent = value;
+    tile.querySelector(".stat-label").textContent = label;
+    container.appendChild(tile);
+  }
+
+  function renderMonthSummary() {
+    var dates = daysOfMonth(monthCursor);
+    var prefix = monthPrefix(monthCursor);
+    var todayIso = isoDate(new Date());
+
+    document.getElementById("summaryTitle").textContent =
+      "Resumen de " + MONTHS[monthCursor.getMonth()] + " " + monthCursor.getFullYear();
+
+    var tasksInMonth = state.tasks.filter(function (t) { return t.day && t.day.indexOf(prefix) === 0; });
+    var tasksDone = tasksInMonth.filter(function (t) { return t.done; }).length;
+    var taskRate = tasksInMonth.length ? Math.round((tasksDone / tasksInMonth.length) * 100) : 0;
+
+    var eventsInMonth = state.agenda.filter(function (e) { return e.day && e.day.indexOf(prefix) === 0; }).length;
+
+    var monthStartMs = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1).getTime();
+    var monthEndMs = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1).getTime();
+    var notesInMonth = state.notes.filter(function (n) { return n.ts >= monthStartMs && n.ts < monthEndMs; }).length;
+
+    var bestHabit = null, bestStreak = -1;
+    state.habits.forEach(function (h) {
+      var s = habitStreak(h);
+      if (s > bestStreak) { bestStreak = s; bestHabit = h; }
+    });
+
+    var tiles = document.getElementById("statTiles");
+    tiles.innerHTML = "";
+    addStatTile(tiles, tasksInMonth.length ? (tasksDone + "/" + tasksInMonth.length) : "—",
+      "Tareas completadas" + (tasksInMonth.length ? " · " + taskRate + "%" : ""));
+    addStatTile(tiles, eventsInMonth, "Eventos agendados");
+    addStatTile(tiles, notesInMonth, "Notas guardadas");
+    addStatTile(tiles, bestHabit && bestStreak > 0 ? bestStreak : "—",
+      bestHabit && bestStreak > 0 ? "Racha más larga · " + bestHabit.emoji + " " + bestHabit.name : "Racha más larga");
+
+    var habitsWrap = document.getElementById("summaryHabits");
+    habitsWrap.innerHTML = "";
+    if (!state.habits.length) {
+      habitsWrap.innerHTML = '<div class="empty-state">Agrega hábitos para ver su avance del mes aquí.</div>';
+      return;
+    }
+
+    state.habits.forEach(function (h) {
+      var scheduled = dates.filter(function (d) { return isHabitScheduled(h, d); });
+      var done = scheduled.filter(function (d) { return h.days[isoDate(d)]; }).length;
+      var rate = scheduled.length ? Math.round((done / scheduled.length) * 100) : 0;
+
+      var block = document.createElement("div");
+      block.className = "summary-habit";
+
+      var head = document.createElement("div");
+      head.className = "summary-habit-head";
+      var name = document.createElement("span");
+      name.className = "summary-habit-name";
+      name.innerHTML = '<span>' + escapeHtml(h.emoji || "✅") + "</span><span></span>";
+      name.querySelector("span:last-child").textContent = h.name;
+      var rateEl = document.createElement("span");
+      rateEl.className = "summary-habit-rate";
+      rateEl.textContent = scheduled.length ? done + "/" + scheduled.length + " días · " + rate + "%" : "sin días programados este mes";
+      head.appendChild(name);
+      head.appendChild(rateEl);
+      block.appendChild(head);
+
+      var dots = document.createElement("div");
+      dots.className = "month-dots";
+      dates.forEach(function (d) {
+        var iso = isoDate(d);
+        var dot = document.createElement("span");
+        var scheduledDay = isHabitScheduled(h, d);
+        var doneDay = !!h.days[iso];
+        var cls = "month-dot";
+        if (!scheduledDay) cls += " is-off";
+        else if (doneDay) cls += " is-done";
+        else if (iso < todayIso) cls += " is-missed";
+        if (iso === todayIso) cls += " is-today";
+        dot.className = cls;
+        if (doneDay) dot.style.background = "var(--" + (h.color || "accent") + ")";
+        dot.title = h.name + " — " + iso + (!scheduledDay ? " (no programado)" : doneDay ? " (hecho)" : " (pendiente)");
+        dots.appendChild(dot);
+      });
+      block.appendChild(dots);
+
+      habitsWrap.appendChild(block);
+    });
+  }
+
   function renderAll() {
     renderMonthCalendar();
     renderWeekPanorama();
@@ -1604,13 +1794,18 @@
     renderTasks();
     renderNotes();
     renderHabits();
+    renderMonthSummary();
   }
 
   function setViewMode(mode) {
     viewMode = mode;
     document.getElementById("board").classList.toggle("view-week", mode === "week");
+    document.getElementById("board").hidden = mode === "month";
+    document.getElementById("habitsSection").hidden = mode === "month";
+    document.getElementById("monthSummarySection").hidden = mode !== "month";
     document.getElementById("viewDayBtn").classList.toggle("is-active", mode === "day");
     document.getElementById("viewWeekBtn").classList.toggle("is-active", mode === "week");
+    document.getElementById("viewMonthBtn").classList.toggle("is-active", mode === "month");
     renderAll();
   }
 
@@ -1619,11 +1814,25 @@
   function wireEvents() {
     document.getElementById("prevMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1);
-      renderMonthCalendar();
+      renderMonthCalendar(); renderMonthSummary();
     });
     document.getElementById("nextMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
-      renderMonthCalendar();
+      renderMonthCalendar(); renderMonthSummary();
+    });
+    document.getElementById("prevSummaryMonth").addEventListener("click", function () {
+      monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1);
+      renderMonthSummary(); renderMonthCalendar();
+    });
+    document.getElementById("nextSummaryMonth").addEventListener("click", function () {
+      monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
+      renderMonthSummary(); renderMonthCalendar();
+    });
+    document.getElementById("summaryTodayBtn").addEventListener("click", function () {
+      var today = new Date();
+      monthCursor = startOfMonth(today);
+      selectedDate = isoDate(today);
+      renderAll();
     });
     document.getElementById("todayBtn").addEventListener("click", function () {
       var today = new Date();
@@ -1637,6 +1846,7 @@
 
     document.getElementById("viewDayBtn").addEventListener("click", function () { setViewMode("day"); });
     document.getElementById("viewWeekBtn").addEventListener("click", function () { setViewMode("week"); });
+    document.getElementById("viewMonthBtn").addEventListener("click", function () { setViewMode("month"); });
     document.getElementById("prevWeekBtn").addEventListener("click", function () {
       var d = parseIso(selectedDate); d.setDate(d.getDate() - 7);
       selectedDate = isoDate(d); monthCursor = startOfMonth(d);
