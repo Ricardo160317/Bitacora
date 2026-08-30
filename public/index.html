@@ -238,51 +238,69 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
+    gap: 4px;
   }
+
+  .nav-btn[hidden] { display: none; }
+
+  .month-label-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 999px;
+    min-width: 0;
+  }
+  .month-label-btn:hover { background: var(--surface-2); }
 
   .month-label {
     font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-size: 0.86rem;
+    font-size: 0.82rem;
     font-weight: 500;
     letter-spacing: 0.02em;
     text-transform: capitalize;
+    color: var(--ink);
   }
+
+  .month-label-btn .chevron {
+    font-size: 0.62rem;
+    color: var(--muted);
+    transition: transform 150ms ease;
+  }
+  .month-label-btn[aria-expanded="true"] .chevron { transform: rotate(180deg); }
 
   .nav-btn {
     flex: none;
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--ink);
-    font-size: 1rem;
+    font-size: 0.92rem;
     cursor: pointer;
     display: grid;
     place-items: center;
   }
   .nav-btn:hover { background: var(--surface-2); }
 
-  .month-dow-row, .month-grid {
+  /* Compact week strip: default, low-footprint date picker for Day view */
+  .week-strip[hidden] { display: none; }
+  .week-strip {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    gap: 3px;
   }
-
-  .month-dow-row span {
-    text-align: center;
-    font-family: "IBM Plex Mono", ui-monospace, monospace;
-    font-size: 0.62rem;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-  }
-
-  .day-chip {
+  .week-strip-day {
     border: 1px solid var(--border);
     background: var(--surface);
-    border-radius: 10px;
-    padding: 5px 2px 6px;
+    border-radius: 8px;
+    padding: 3px 1px 4px;
     text-align: center;
     cursor: pointer;
     font-family: "IBM Plex Mono", ui-monospace, monospace;
@@ -290,8 +308,53 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 2px;
+  }
+  .week-strip-day .dow { font-size: 0.56rem; color: var(--muted); letter-spacing: 0.03em; }
+  .week-strip-day .num { font-size: 0.8rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .week-strip-day .dots { display: flex; gap: 2px; height: 4px; }
+  .week-strip-day .dots span { width: 4px; height: 4px; border-radius: 50%; }
+  .week-strip-day .dots .d-agenda { background: var(--accent); }
+  .week-strip-day .dots .d-tasks { background: var(--amber); }
+  .week-strip-day.is-today { border-color: var(--amber); }
+  .week-strip-day.is-today .num { color: var(--amber); }
+  .week-strip-day.is-selected { background: var(--accent); border-color: var(--accent); }
+  .week-strip-day.is-selected .dow,
+  .week-strip-day.is-selected .num { color: var(--accent-ink); }
+  .week-strip-day.is-selected .dots .d-agenda,
+  .week-strip-day.is-selected .dots .d-tasks { background: var(--accent-ink); }
+
+  .month-grid-wrap[hidden] { display: none; }
+  .month-grid-wrap { display: flex; flex-direction: column; gap: 6px; }
+
+  .month-dow-row, .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
     gap: 3px;
-    min-height: 40px;
+  }
+
+  .month-dow-row span {
+    text-align: center;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .day-chip {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 3px 2px 4px;
+    text-align: center;
+    cursor: pointer;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: 30px;
   }
 
   .day-chip.is-outside { opacity: 0.38; }
@@ -1101,14 +1164,20 @@
         <button class="ghost-btn" id="todayBtn" type="button">Hoy</button>
       </div>
       <div class="month-nav">
-        <button class="nav-btn" id="prevMonth" type="button" aria-label="Mes anterior">‹</button>
-        <span class="month-label" id="monthLabel"></span>
-        <button class="nav-btn" id="nextMonth" type="button" aria-label="Mes siguiente">›</button>
+        <button class="nav-btn" id="prevMonth" type="button" aria-label="Mes anterior" hidden>‹</button>
+        <button class="month-label-btn" id="monthToggleBtn" type="button" aria-expanded="false">
+          <span class="month-label" id="monthLabel"></span>
+          <span class="chevron" id="monthChevron">▾</span>
+        </button>
+        <button class="nav-btn" id="nextMonth" type="button" aria-label="Mes siguiente" hidden>›</button>
       </div>
-      <div class="month-dow-row">
-        <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+      <div class="week-strip" id="weekStrip"></div>
+      <div class="month-grid-wrap" id="monthGridWrap" hidden>
+        <div class="month-dow-row">
+          <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+        </div>
+        <div class="month-grid" id="monthGrid"></div>
       </div>
-      <div class="month-grid" id="monthGrid"></div>
       <ul class="agenda-list" id="agendaList"></ul>
       <form class="add-form" id="agendaForm">
         <input type="time" id="agendaTime" required value="09:00">
@@ -1241,6 +1310,7 @@
   var selectedDate = isoDate(new Date());
   var viewMode = "day"; // "day" | "week" | "month" | "future"
   var futureCursor = startOfMonth(new Date()); // first month of the visible 6-month future log window
+  var monthExpanded = false; // Agenda: false = tira de la semana, true = mes completo
   var noteMode = "write"; // "write" | "draw"
   var drawCtx = null;
   var drawing = false;
@@ -1384,6 +1454,44 @@
   }
 
   function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // Tira compacta con los 7 días de la semana de selectedDate: el selector
+  // de fecha por defecto en la vista Día, para no ocupar el espacio de un
+  // mes completo cuando no hace falta.
+  function renderWeekStrip() {
+    var monday = startOfWeek(parseIso(selectedDate));
+    var todayIso = isoDate(new Date());
+    var agendaDays = {};
+    state.agenda.forEach(function (e) { agendaDays[e.day] = true; });
+    var taskDays = {};
+    state.tasks.forEach(function (t) { if (!t.done) taskDays[t.day] = true; });
+
+    var strip = document.getElementById("weekStrip");
+    strip.innerHTML = "";
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(monday); d.setDate(monday.getDate() + i);
+      var iso = isoDate(d);
+      var cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "week-strip-day" +
+        (iso === todayIso ? " is-today" : "") +
+        (iso === selectedDate ? " is-selected" : "");
+      var dots = "";
+      if (agendaDays[iso]) dots += '<span class="d-agenda"></span>';
+      if (taskDays[iso]) dots += '<span class="d-tasks"></span>';
+      cell.innerHTML = '<span class="dow">' + DOW[d.getDay()] + '</span>' +
+        '<span class="num">' + d.getDate() + '</span><span class="dots">' + dots + "</span>";
+      cell.setAttribute("aria-label", DOW_FULL[d.getDay()] + " " + d.getDate());
+      cell.addEventListener("click", (function (iso, d) {
+        return function () {
+          selectedDate = iso;
+          monthCursor = startOfMonth(d);
+          renderAll();
+        };
+      })(iso, d));
+      strip.appendChild(cell);
+    }
+  }
 
   function renderMonthCalendar() {
     document.getElementById("monthLabel").textContent =
@@ -1958,6 +2066,7 @@
   }
 
   function renderAll() {
+    renderWeekStrip();
     renderMonthCalendar();
     renderWeekPanorama();
     renderAgenda();
@@ -1992,6 +2101,15 @@
     document.getElementById("nextMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
       renderMonthCalendar(); renderMonthSummary();
+    });
+    document.getElementById("monthToggleBtn").addEventListener("click", function () {
+      monthExpanded = !monthExpanded;
+      document.getElementById("monthGridWrap").hidden = !monthExpanded;
+      document.getElementById("weekStrip").hidden = monthExpanded;
+      document.getElementById("prevMonth").hidden = !monthExpanded;
+      document.getElementById("nextMonth").hidden = !monthExpanded;
+      this.setAttribute("aria-expanded", monthExpanded ? "true" : "false");
+      if (monthExpanded) { monthCursor = startOfMonth(parseIso(selectedDate)); renderMonthCalendar(); }
     });
     document.getElementById("prevSummaryMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1);
