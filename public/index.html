@@ -1567,6 +1567,38 @@
     text-transform: capitalize;
   }
 
+  /* Bitácora: diario cronológico, complementa las notas rápidas */
+  .bitacora-section { margin-top: 20px; max-width: 720px; }
+  .bitacora-sub { margin: -8px 0 0; color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
+
+  .journal-timeline { display: flex; flex-direction: column; gap: 24px; }
+  .journal-day { display: flex; flex-direction: column; gap: 12px; }
+  .journal-day-label {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--accent-ink);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .journal-day-label.is-today { color: var(--amber); }
+
+  .journal-entry { display: flex; flex-direction: column; gap: 5px; }
+  .journal-entry-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .journal-entry-time {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .journal-entry-body {
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-size: 0.98rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   /* Monthly summary */
   .month-summary-section { margin-top: 20px; }
   .summary-head { flex-wrap: wrap; gap: 10px; }
@@ -2085,6 +2117,16 @@
         <button type="submit">Agregar</button>
       </form>
     </section>
+
+    <section class="col bitacora-section" id="bitacoraSection" aria-label="Bitácora" hidden>
+      <div class="col-head"><h2>Bitácora</h2></div>
+      <p class="bitacora-sub">Qué ocurrió, decisiones, ideas, aprendizajes, pensamientos — tu registro personal del día.</p>
+      <form class="add-form" id="journalForm">
+        <textarea id="journalText" placeholder="Hoy…" required maxlength="4000"></textarea>
+        <button type="submit">Guardar entrada</button>
+      </form>
+      <div class="journal-timeline" id="journalTimeline"></div>
+    </section>
   </div>
 
   <button type="button" class="fab-btn" id="fabAdd" aria-haspopup="true" aria-expanded="false" aria-label="Agregar">+</button>
@@ -2218,6 +2260,7 @@
       agenda: Array.isArray(parsed.agenda) ? parsed.agenda : [],
       habits: Array.isArray(parsed.habits) ? parsed.habits : [],
       futureLog: Array.isArray(parsed.futureLog) ? parsed.futureLog : [],
+      journal: Array.isArray(parsed.journal) ? parsed.journal : [],
       top3: (parsed.top3 && typeof parsed.top3 === "object" && !Array.isArray(parsed.top3)) ? parsed.top3 : {},
       showDone: !!parsed.showDone
     };
@@ -3338,6 +3381,60 @@
     });
   }
 
+  // ---- Bitácora: diario cronológico (complementa las notas rápidas) ----
+
+  function renderJournal() {
+    var wrap = document.getElementById("journalTimeline");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+
+    if (!state.journal.length) {
+      wrap.innerHTML = '<div class="empty-state">Aún no has escrito nada en tu bitácora. Cuenta cómo va tu día.</div>';
+      return;
+    }
+
+    var todayIso = isoDate(new Date());
+    var groups = {};
+    state.journal.forEach(function (entry) {
+      var iso = isoDate(new Date(entry.ts));
+      if (!groups[iso]) groups[iso] = [];
+      groups[iso].push(entry);
+    });
+
+    Object.keys(groups).sort().reverse().forEach(function (iso) {
+      var entries = groups[iso].slice().sort(function (a, b) { return b.ts - a.ts; });
+
+      var dayBlock = document.createElement("div");
+      dayBlock.className = "journal-day";
+
+      var label = document.createElement("div");
+      label.className = "journal-day-label" + (iso === todayIso ? " is-today" : "");
+      var d = parseIso(iso);
+      label.textContent = d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3).toUpperCase() + " " + d.getFullYear();
+      dayBlock.appendChild(label);
+
+      entries.forEach(function (entry) {
+        var row = document.createElement("div");
+        row.className = "journal-entry";
+        row.innerHTML =
+          '<div class="journal-entry-head"><span class="journal-entry-time"></span>' +
+          '<button type="button" class="icon-btn">✕</button></div>' +
+          '<div class="journal-entry-body"></div>';
+        row.querySelector(".journal-entry-time").textContent = relativeTime(entry.ts);
+        row.querySelector(".journal-entry-body").textContent = entry.text;
+        var del = row.querySelector(".icon-btn");
+        del.setAttribute("aria-label", "Eliminar entrada de la bitácora");
+        del.addEventListener("click", function () {
+          state.journal = state.journal.filter(function (x) { return x.id !== entry.id; });
+          renderJournal(); scheduleSave();
+        });
+        dayBlock.appendChild(row);
+      });
+
+      wrap.appendChild(dayBlock);
+    });
+  }
+
   function renderAll() {
     renderWeekStrip();
     renderMonthCalendar();
@@ -3352,6 +3449,7 @@
     renderMonthSummary();
     renderMonthCalendarFull();
     renderFutureLog();
+    renderJournal();
   }
 
   function scrollToCard(selector) {
@@ -3363,14 +3461,22 @@
 
   function setViewMode(mode) {
     viewMode = mode;
+    var isDayOrWeek = mode === "day" || mode === "week";
+    var isCoreView = isDayOrWeek || mode === "month" || mode === "future";
+
     var board = document.getElementById("board");
     board.classList.toggle("view-week", mode === "week");
     board.classList.toggle("view-day", mode === "day");
-    board.hidden = mode === "month" || mode === "future";
-    document.getElementById("habitsSection").hidden = mode === "month" || mode === "future";
+    board.hidden = !isDayOrWeek;
+    document.getElementById("habitsSection").hidden = !isDayOrWeek;
     document.getElementById("weekQuickView").hidden = mode !== "day";
     document.getElementById("monthSummarySection").hidden = mode !== "month";
     document.getElementById("futureLogSection").hidden = mode !== "future";
+    document.getElementById("bitacoraSection").hidden = mode !== "bitacora";
+
+    // El toggle Día/Semana/Mes/Planificar solo aplica a esas 4 vistas; la
+    // Bitácora se abre únicamente desde el menú lateral.
+    document.getElementById("viewToggle").hidden = !isCoreView;
 
     document.getElementById("viewDayBtn").classList.toggle("is-active", mode === "day");
     document.getElementById("viewWeekBtn").classList.toggle("is-active", mode === "week");
@@ -3379,6 +3485,7 @@
 
     document.getElementById("navHoy").classList.toggle("is-active", mode === "day");
     document.getElementById("navCalendario").classList.toggle("is-active", mode === "month");
+    document.getElementById("navBitacora").classList.toggle("is-active", mode === "bitacora");
 
     renderAll();
   }
@@ -3471,6 +3578,16 @@
       if (futureFilterCategory !== "all" && futureFilterCategory !== activeFutureCategory) futureFilterCategory = "all";
       renderFutureLog(); scheduleSave();
     });
+
+    document.getElementById("journalForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var text = document.getElementById("journalText").value.trim();
+      if (!text) return;
+      state.journal.push({ id: newId(), text: text, ts: Date.now() });
+      document.getElementById("journalText").value = "";
+      renderJournal(); scheduleSave();
+    });
+
     document.getElementById("prevWeekBtn").addEventListener("click", function () {
       var d = parseIso(selectedDate); d.setDate(d.getDate() - 7);
       selectedDate = isoDate(d); monthCursor = startOfMonth(d);
@@ -3616,9 +3733,7 @@
     // Sidebar: navegación
     document.getElementById("navHoy").addEventListener("click", function () { setViewMode("day"); });
     document.getElementById("navCalendario").addEventListener("click", function () { setViewMode("month"); });
-    document.getElementById("navBitacora").addEventListener("click", function () {
-      setViewMode("day"); scrollToCard(".col-notes");
-    });
+    document.getElementById("navBitacora").addEventListener("click", function () { setViewMode("bitacora"); });
     document.getElementById("navHabitos").addEventListener("click", function () {
       setViewMode("day"); scrollToCard("#habitsSection");
     });
