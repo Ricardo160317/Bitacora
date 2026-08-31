@@ -562,7 +562,7 @@
     color: var(--muted);
   }
 
-  /* Week panorama (vista Semana, sin cambios) */
+  /* Week panorama (vista Semana): cada día como una mini-columna/timeline */
   .week-range-label {
     font-family: "IBM Plex Mono", ui-monospace, monospace;
     font-size: 0.86rem;
@@ -577,18 +577,21 @@
     align-items: stretch;
   }
 
-  @media (max-width: 720px) {
-    .week-panorama-grid { grid-template-columns: 1fr; }
+  @media (max-width: 900px) {
+    .week-panorama-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @media (max-width: 560px) {
+    .week-panorama-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
   .week-day-card {
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--surface-2);
-    padding: 8px 7px;
+    padding: 9px 8px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 7px;
     cursor: pointer;
     min-height: 0;
     text-align: left;
@@ -604,7 +607,8 @@
   }
   .week-day-card.is-selected .wd-name,
   .week-day-card.is-selected .wd-num,
-  .week-day-card.is-selected .wd-empty { color: var(--accent-ink); }
+  .week-day-card.is-selected .wd-empty,
+  .week-day-card.is-selected .wd-load-label { color: var(--accent-ink); }
 
   .wd-head {
     display: flex;
@@ -625,18 +629,66 @@
   }
   .week-day-card.is-today .wd-num { color: var(--amber); }
 
+  /* Carga de trabajo del día: barra proporcional al total de eventos + tareas */
+  .wd-load-bar {
+    height: 4px;
+    border-radius: 999px;
+    background: var(--bg);
+    overflow: hidden;
+    flex: none;
+  }
+  .wd-load-bar span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+  }
+  .week-day-card.is-selected .wd-load-bar { background: rgba(0,0,0,0.12); }
+  .week-day-card.is-selected .wd-load-bar span { background: var(--accent-ink); }
+
   .wd-list {
     display: flex;
     flex-direction: column;
     gap: 3px;
   }
+  .wd-section-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 2px 0 -1px;
+  }
+  .week-day-card.is-selected .wd-section-label { color: var(--accent-ink); opacity: 0.75; }
+
   .wd-event, .wd-task {
     font-size: 0.72rem;
     line-height: 1.3;
     display: flex;
+    align-items: flex-start;
     gap: 4px;
     word-break: break-word;
   }
+  .wd-event > span:last-child {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .wd-task {
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-height: calc(1.3em * 2);
+    overflow: hidden;
+  }
+  .wd-event .wd-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    border: 1.5px solid var(--accent-ink);
+    background: transparent;
+    flex: none; margin-top: 3px;
+  }
+  .wd-event.is-done .wd-dot { background: var(--accent-ink); }
+  .wd-event.is-done { color: var(--muted); text-decoration: line-through; }
+  .week-day-card.is-selected .wd-event .wd-dot { border-color: var(--accent-ink); }
   .wd-event .wd-time {
     font-family: "IBM Plex Mono", ui-monospace, monospace;
     color: var(--accent-ink);
@@ -656,6 +708,19 @@
   .wd-task[data-p="media"]::before { background: var(--amber); }
   .wd-task[data-p="baja"]::before { background: var(--accent); }
   .wd-task.is-done { text-decoration: line-through; opacity: 0.6; }
+
+  .wd-habits { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 1px; }
+  .wd-habit-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    border: 1.5px solid var(--muted);
+    background: transparent;
+    flex: none;
+  }
+  .wd-habit-dot.is-done { border-color: transparent; }
+  .week-day-card.is-selected .wd-habit-dot { border-color: var(--accent-ink); }
+  /* En la tarjeta seleccionada (fondo verde) un hábito "hecho" con su color
+     por defecto se confundiría con el fondo: forzamos un anillo visible. */
+  .week-day-card.is-selected .wd-habit-dot.is-done { border: 1.5px solid var(--accent-ink); }
 
   .wd-empty {
     font-size: 0.72rem;
@@ -1387,7 +1452,7 @@
     .fab-menu { right: 16px; bottom: 144px; }
   }
 
-  /* Future log */
+  /* Future log ("Planificar") */
   .future-log-section { margin-top: 20px; }
   .future-range-label {
     font-family: "IBM Plex Mono", ui-monospace, monospace;
@@ -1395,6 +1460,40 @@
     font-weight: 500;
     letter-spacing: 0.02em;
   }
+
+  .future-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .future-filter-chip {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .future-filter-chip.is-active {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+  }
+
+  .cat-picker { display: flex; gap: 5px; flex: none; }
+  .cat-chip {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+  .cat-chip.is-active { background: var(--accent-soft); border-color: var(--accent); }
 
   .future-grid {
     display: grid;
@@ -1444,6 +1543,17 @@
   }
   .future-item .item-title { flex: 1; word-break: break-word; }
   .future-item.is-done .item-title { text-decoration: line-through; color: var(--muted); }
+  .future-item-icon { flex: none; font-size: 0.86rem; margin-top: 1px; }
+
+  .future-grid-empty {
+    grid-column: 1 / -1;
+    color: var(--muted);
+    font-size: 0.88rem;
+    padding: 18px 4px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    text-align: center;
+  }
 
   #futureForm select {
     flex: none;
@@ -1483,6 +1593,83 @@
     font-variant-numeric: tabular-nums;
   }
   .stat-tile .stat-label { font-size: 0.76rem; color: var(--muted); }
+
+  .section-subhead {
+    margin: 6px 0 -8px;
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  /* Calendario mensual real */
+  .month-calendar-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .month-dow-row-big {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .month-dow-row-big span {
+    text-align: center;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .month-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .month-cell {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 6px 6px 7px;
+    min-height: 74px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: var(--ink);
+  }
+  .month-cell:hover { background: var(--accent-soft); }
+  .month-cell.is-outside { opacity: 0.4; }
+  .month-cell.is-today { border-color: var(--amber); }
+  .month-cell.is-today .mc-num { color: var(--amber); }
+  .month-cell.is-selected { background: var(--accent); border-color: var(--accent); }
+  .month-cell.is-selected .mc-num,
+  .month-cell.is-selected .mc-pct { color: var(--accent-ink); }
+  .mc-num {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .mc-dots { display: flex; gap: 3px; height: 6px; }
+  .mc-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .mc-dot-agenda { background: var(--accent); }
+  .mc-dot-tasks { background: var(--amber); }
+  .mc-dot-habits { background: var(--blue); }
+  .month-cell.is-selected .mc-dot { background: var(--accent-ink); }
+  .mc-pct {
+    margin-top: auto;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.66rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 760px) {
+    .month-cell { min-height: 54px; padding: 4px 4px 5px; }
+    .mc-num { font-size: 0.76rem; }
+  }
+  @media (max-width: 560px) {
+    .month-dow-row-big span { font-size: 0.56rem; }
+    .month-cell { min-height: 40px; gap: 2px; }
+    .mc-pct { display: none; }
+  }
 
   .summary-habits { display: flex; flex-direction: column; gap: 14px; }
   .summary-habit { display: flex; flex-direction: column; gap: 7px; }
@@ -1846,9 +2033,9 @@
       <div class="week-quick-grid" id="weekQuickGrid"></div>
     </section>
 
-    <section class="col month-summary-section" id="monthSummarySection" aria-label="Resumen mensual" hidden>
+    <section class="col month-summary-section" id="monthSummarySection" aria-label="Calendario mensual" hidden>
       <div class="col-head summary-head">
-        <h2 id="summaryTitle">Resumen</h2>
+        <h2 id="summaryTitle">Mes</h2>
         <div class="month-nav">
           <button class="nav-btn" id="prevSummaryMonth" type="button" aria-label="Mes anterior">‹</button>
           <button class="ghost-btn" id="summaryTodayBtn" type="button">Hoy</button>
@@ -1856,6 +2043,13 @@
         </div>
       </div>
       <div class="stat-tiles" id="statTiles"></div>
+      <div class="month-calendar-wrap">
+        <div class="month-dow-row-big">
+          <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+        </div>
+        <div class="month-calendar-grid" id="monthCalendarGrid"></div>
+      </div>
+      <h3 class="section-subhead">Hábitos del mes</h3>
       <div class="summary-habits" id="summaryHabits"></div>
     </section>
 
@@ -1869,10 +2063,25 @@
         </div>
         <button class="ghost-btn" id="futureTodayBtn" type="button">Hoy</button>
       </div>
+      <div class="future-filter-chips" id="futureFilterChips">
+        <button type="button" class="future-filter-chip is-active" data-cat="all">Todos</button>
+        <button type="button" class="future-filter-chip" data-cat="evento">📅 Eventos</button>
+        <button type="button" class="future-filter-chip" data-cat="objetivo">🎯 Objetivos</button>
+        <button type="button" class="future-filter-chip" data-cat="recordatorio">⏰ Recordatorios</button>
+        <button type="button" class="future-filter-chip" data-cat="idea">💡 Ideas</button>
+        <button type="button" class="future-filter-chip" data-cat="proyecto">📁 Proyectos</button>
+      </div>
       <div class="future-grid" id="futureGrid"></div>
       <form class="add-form" id="futureForm">
         <select id="futureMonthSelect"></select>
         <input type="text" id="futureText" placeholder="Algo para planear más adelante…" required maxlength="140">
+        <div class="cat-picker" id="futureCategoryPicker">
+          <button type="button" class="cat-chip" data-cat="evento" title="Evento">📅</button>
+          <button type="button" class="cat-chip" data-cat="objetivo" title="Objetivo">🎯</button>
+          <button type="button" class="cat-chip" data-cat="recordatorio" title="Recordatorio">⏰</button>
+          <button type="button" class="cat-chip is-active" data-cat="idea" title="Idea">💡</button>
+          <button type="button" class="cat-chip" data-cat="proyecto" title="Proyecto">📁</button>
+        </div>
         <button type="submit">Agregar</button>
       </form>
     </section>
@@ -1913,6 +2122,13 @@
     "Hoy también cuenta.",
     "Ordena tu día y tu mente sigue el ritmo."
   ];
+  var FUTURE_CATEGORIES = {
+    evento: { label: "Evento", icon: "📅" },
+    objetivo: { label: "Objetivo", icon: "🎯" },
+    recordatorio: { label: "Recordatorio", icon: "⏰" },
+    idea: { label: "Idea", icon: "💡" },
+    proyecto: { label: "Proyecto", icon: "📁" }
+  };
 
   var state = null;
   var monthCursor = startOfMonth(new Date()); // first day of the visible month
@@ -1928,6 +2144,7 @@
   var editingTaskTimeId = null;
   var editingAgendaId = null;
   var taskFilterStatus = "pendiente";
+  var futureFilterCategory = "all";
 
   var PRIORITY_ORDER = { alta: 0, media: 1, baja: 2 };
 
@@ -2010,6 +2227,7 @@
       t.done = t.status === "completada";
     });
     state.agenda.forEach(function (e) { if (typeof e.done !== "boolean") e.done = false; });
+    state.futureLog.forEach(function (it) { if (!FUTURE_CATEGORIES[it.category]) it.category = "idea"; });
     rolloverTasks();
   }
 
@@ -2166,6 +2384,9 @@
     });
   }
 
+  // Vista Semana: cada día como una mini-columna con su propia línea de
+  // tiempo (agenda), tareas abiertas, hábitos programados y una barra de
+  // carga de trabajo relativa al resto de la semana.
   function renderWeekPanorama() {
     var monday = startOfWeek(parseIso(selectedDate));
     var sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
@@ -2176,14 +2397,28 @@
     var grid = document.getElementById("weekPanoramaGrid");
     grid.innerHTML = "";
 
+    var weekDays = [];
     for (var i = 0; i < 7; i++) {
       var d = new Date(monday); d.setDate(monday.getDate() + i);
+      weekDays.push(d);
+    }
+
+    var dayData = weekDays.map(function (d) {
       var iso = isoDate(d);
       var dayEvents = state.agenda.filter(function (e) { return e.day === iso; })
         .sort(function (a, b) { return a.time.localeCompare(b.time); });
-      var dayTasks = sortTasksForDisplay(state.tasks.filter(function (t) {
-        return t.day === iso && (state.showDone || !t.done);
-      }));
+      var allTasks = state.tasks.filter(function (t) { return t.day === iso; });
+      var openTasks = sortTasksForDisplay(allTasks.filter(function (t) { return t.status !== "completada"; }));
+      var dayHabits = state.habits.filter(function (h) { return isHabitScheduled(h, d); });
+      return {
+        d: d, iso: iso, dayEvents: dayEvents, openTasks: openTasks, dayHabits: dayHabits,
+        load: dayEvents.length + allTasks.length
+      };
+    });
+    var maxLoad = Math.max.apply(null, dayData.map(function (x) { return x.load; }).concat([1]));
+
+    dayData.forEach(function (info) {
+      var d = info.d, iso = info.iso, dayEvents = info.dayEvents, openTasks = info.openTasks, dayHabits = info.dayHabits;
 
       var card = document.createElement("button");
       card.type = "button";
@@ -2191,46 +2426,87 @@
         (iso === todayIso ? " is-today" : "") +
         (iso === selectedDate ? " is-selected" : "");
 
-      var html = '<div class="wd-head"><span class="wd-name">' + DOW_FULL[d.getDay()].slice(0, 3) +
-        '</span><span class="wd-num">' + d.getDate() + "</span></div>";
+      var head = document.createElement("div");
+      head.className = "wd-head";
+      head.innerHTML = '<span class="wd-name">' + DOW_FULL[d.getDay()].slice(0, 3) +
+        '</span><span class="wd-num">' + d.getDate() + "</span>";
+      card.appendChild(head);
 
-      var rows = [];
-      dayEvents.slice(0, 3).forEach(function (ev) {
-        rows.push('<div class="wd-event"><span class="wd-time">' + escapeHtml(ev.time) + "</span><span></span></div>");
-      });
-      var extraEvents = dayEvents.length - 3;
+      var loadBar = document.createElement("div");
+      loadBar.className = "wd-load-bar";
+      loadBar.title = info.load ? (info.load + " elemento" + (info.load === 1 ? "" : "s") + " en el día") : "Día libre";
+      var loadInner = document.createElement("span");
+      loadInner.style.width = (info.load ? Math.max(8, Math.round((info.load / maxLoad) * 100)) : 0) + "%";
+      loadBar.appendChild(loadInner);
+      card.appendChild(loadBar);
 
-      var list = '<div class="wd-list">' + rows.join("") + "</div>";
-      card.innerHTML = html + list;
+      if (dayEvents.length) {
+        var evLabel = document.createElement("div");
+        evLabel.className = "wd-section-label";
+        evLabel.textContent = "Agenda";
+        card.appendChild(evLabel);
 
-      // fill event titles safely (avoid HTML injection)
-      var evEls = card.querySelectorAll(".wd-event span:last-child");
-      dayEvents.slice(0, 3).forEach(function (ev, idx) { evEls[idx].textContent = ev.title; });
-
-      var taskWrap = document.createElement("div");
-      taskWrap.className = "wd-list";
-      dayTasks.slice(0, 3).forEach(function (t) {
-        var row = document.createElement("div");
-        row.className = "wd-task" + (t.done ? " is-done" : "");
-        row.setAttribute("data-p", t.priority);
-        row.textContent = (t.time ? t.time + " " : "") + t.text;
-        taskWrap.appendChild(row);
-      });
-      card.appendChild(taskWrap);
-
-      var extraTasks = dayTasks.length - 3;
-      var extraTotal = (extraEvents > 0 ? extraEvents : 0) + (extraTasks > 0 ? extraTasks : 0);
-      if (extraTotal > 0) {
-        var more = document.createElement("div");
-        more.className = "wd-more";
-        more.textContent = "+" + extraTotal + " más";
-        card.appendChild(more);
+        var evWrap = document.createElement("div");
+        evWrap.className = "wd-list";
+        dayEvents.slice(0, 3).forEach(function (ev) {
+          var row = document.createElement("div");
+          row.className = "wd-event" + (ev.done ? " is-done" : "");
+          row.innerHTML = '<span class="wd-dot"></span><span class="wd-time"></span><span></span>';
+          row.querySelector(".wd-time").textContent = ev.time;
+          row.querySelector("span:last-child").textContent = ev.title;
+          evWrap.appendChild(row);
+        });
+        card.appendChild(evWrap);
+        if (dayEvents.length > 3) {
+          var moreEv = document.createElement("div");
+          moreEv.className = "wd-more";
+          moreEv.textContent = "+" + (dayEvents.length - 3) + " más";
+          card.appendChild(moreEv);
+        }
       }
 
-      if (!dayEvents.length && !dayTasks.length) {
+      if (openTasks.length) {
+        var tLabel = document.createElement("div");
+        tLabel.className = "wd-section-label";
+        tLabel.textContent = "Tareas";
+        card.appendChild(tLabel);
+
+        var taskWrap = document.createElement("div");
+        taskWrap.className = "wd-list";
+        openTasks.slice(0, 3).forEach(function (t) {
+          var row = document.createElement("div");
+          row.className = "wd-task";
+          row.setAttribute("data-p", t.priority);
+          row.textContent = (t.time ? t.time + " " : "") + t.text;
+          taskWrap.appendChild(row);
+        });
+        card.appendChild(taskWrap);
+        if (openTasks.length > 3) {
+          var moreT = document.createElement("div");
+          moreT.className = "wd-more";
+          moreT.textContent = "+" + (openTasks.length - 3) + " más";
+          card.appendChild(moreT);
+        }
+      }
+
+      if (dayHabits.length) {
+        var hWrap = document.createElement("div");
+        hWrap.className = "wd-habits";
+        dayHabits.forEach(function (h) {
+          var dot = document.createElement("span");
+          var done = !!h.days[iso];
+          dot.className = "wd-habit-dot" + (done ? " is-done" : "");
+          if (done) dot.style.background = "var(--" + (h.color || "accent") + ")";
+          dot.title = (h.emoji || "✅") + " " + h.name + (done ? " (hecho)" : " (pendiente)");
+          hWrap.appendChild(dot);
+        });
+        card.appendChild(hWrap);
+      }
+
+      if (!dayEvents.length && !openTasks.length && !dayHabits.length) {
         var empty = document.createElement("div");
         empty.className = "wd-empty";
-        empty.textContent = "—";
+        empty.textContent = "Día libre";
         card.appendChild(empty);
       }
 
@@ -2243,7 +2519,7 @@
       })(iso, d));
 
       grid.appendChild(card);
-    }
+    });
   }
 
   function parseIso(iso) {
@@ -2821,7 +3097,7 @@
     var todayIso = isoDate(new Date());
 
     document.getElementById("summaryTitle").textContent =
-      "Resumen de " + MONTHS[monthCursor.getMonth()] + " " + monthCursor.getFullYear();
+      capitalize(MONTHS[monthCursor.getMonth()]) + " " + monthCursor.getFullYear();
 
     var tasksInMonth = state.tasks.filter(function (t) { return t.day && t.day.indexOf(prefix) === 0; });
     var tasksDone = tasksInMonth.filter(function (t) { return t.done; }).length;
@@ -2839,6 +3115,19 @@
       if (s > bestStreak) { bestStreak = s; bestHabit = h; }
     });
 
+    // Cumplimiento del mes: promedio del progreso diario real (hábitos + tareas +
+    // eventos) sobre los días ya transcurridos que tenían algo agendado.
+    var todayIsoForRate = isoDate(new Date());
+    var completionValues = [];
+    dates.forEach(function (d) {
+      var iso = isoDate(d);
+      if (iso > todayIsoForRate) return;
+      var p = computeDayProgress(iso);
+      if (p.tasks.total || p.habits.total || p.events.total) completionValues.push(p.pct);
+    });
+    var monthCompletion = completionValues.length ?
+      Math.round(completionValues.reduce(function (a, b) { return a + b; }, 0) / completionValues.length) : null;
+
     var tiles = document.getElementById("statTiles");
     tiles.innerHTML = "";
     addStatTile(tiles, tasksInMonth.length ? (tasksDone + "/" + tasksInMonth.length) : "—",
@@ -2847,6 +3136,7 @@
     addStatTile(tiles, notesInMonth, "Notas guardadas");
     addStatTile(tiles, bestHabit && bestStreak > 0 ? bestStreak : "—",
       bestHabit && bestStreak > 0 ? "Racha más larga · " + bestHabit.emoji + " " + bestHabit.name : "Racha más larga");
+    addStatTile(tiles, monthCompletion === null ? "—" : monthCompletion + "%", "Cumplimiento del mes");
 
     var habitsWrap = document.getElementById("summaryHabits");
     habitsWrap.innerHTML = "";
@@ -2899,6 +3189,50 @@
     });
   }
 
+  // Calendario mensual real: 42 celdas (Lun-Dom) con indicadores de eventos,
+  // tareas y hábitos por día; clic abre ese día en la vista Día.
+  function renderMonthCalendarFull() {
+    var wrap = document.getElementById("monthCalendarGrid");
+    if (!wrap) return;
+    var todayIso = isoDate(new Date());
+    wrap.innerHTML = "";
+
+    monthMatrix(monthCursor).forEach(function (d) {
+      var iso = isoDate(d);
+      var outside = d.getMonth() !== monthCursor.getMonth();
+      var p = computeDayProgress(iso);
+      var hasAny = p.tasks.total || p.habits.total || p.events.total;
+
+      var cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "month-cell" +
+        (outside ? " is-outside" : "") +
+        (iso === todayIso ? " is-today" : "") +
+        (iso === selectedDate ? " is-selected" : "");
+      cell.setAttribute("aria-label", DOW_FULL[d.getDay()] + " " + d.getDate() + " de " + MONTHS[d.getMonth()] +
+        (hasAny ? " — " + p.pct + "% completado" : " — sin nada agendado"));
+
+      cell.innerHTML = '<span class="mc-num">' + d.getDate() + '</span>' +
+        '<span class="mc-dots"></span><span class="mc-pct"></span>';
+
+      var dots = cell.querySelector(".mc-dots");
+      if (p.events.total) { var s1 = document.createElement("span"); s1.className = "mc-dot mc-dot-agenda"; dots.appendChild(s1); }
+      if (p.tasks.total) { var s2 = document.createElement("span"); s2.className = "mc-dot mc-dot-tasks"; dots.appendChild(s2); }
+      if (p.habits.total) { var s3 = document.createElement("span"); s3.className = "mc-dot mc-dot-habits"; dots.appendChild(s3); }
+      cell.querySelector(".mc-pct").textContent = hasAny ? p.pct + "%" : "";
+
+      cell.addEventListener("click", (function (iso, d) {
+        return function () {
+          selectedDate = iso;
+          monthCursor = startOfMonth(d);
+          setViewMode("day");
+        };
+      })(iso, d));
+
+      wrap.appendChild(cell);
+    });
+  }
+
   // ---- Future log ("Planificar") ----
 
   var FUTURE_WINDOW = 6; // meses a la vista, como en un future log de bullet journal
@@ -2934,10 +3268,34 @@
     });
     if (months.some(function (d) { return ymKey(d) === prevSelected; })) select.value = prevSelected;
 
+    Array.prototype.forEach.call(document.querySelectorAll(".future-filter-chip"), function (b) {
+      b.classList.toggle("is-active", b.getAttribute("data-cat") === futureFilterCategory);
+    });
+
     var grid = document.getElementById("futureGrid");
     grid.innerHTML = "";
-    months.forEach(function (d) {
+
+    var visibleByMonth = months.map(function (d) {
       var ym = ymKey(d);
+      return {
+        d: d, ym: ym,
+        items: state.futureLog.filter(function (it) {
+          return it.month === ym && (futureFilterCategory === "all" || it.category === futureFilterCategory);
+        })
+      };
+    });
+    var totalVisible = visibleByMonth.reduce(function (n, m) { return n + m.items.length; }, 0);
+
+    if (!totalVisible && futureFilterCategory !== "all") {
+      var overallEmpty = document.createElement("div");
+      overallEmpty.className = "future-grid-empty";
+      overallEmpty.textContent = "Nada planeado en " + FUTURE_CATEGORIES[futureFilterCategory].label.toLowerCase() + "s todavía, en estos 6 meses.";
+      grid.appendChild(overallEmpty);
+      return;
+    }
+
+    visibleByMonth.forEach(function (m) {
+      var d = m.d, ym = m.ym, items = m.items;
       var card = document.createElement("div");
       card.className = "future-month-card" + (ym === currentYm ? " is-current-month" : "");
 
@@ -2946,18 +3304,20 @@
       title.textContent = MONTHS[d.getMonth()] + " " + d.getFullYear();
       card.appendChild(title);
 
-      var items = state.futureLog.filter(function (it) { return it.month === ym; });
       if (!items.length) {
         var empty = document.createElement("div");
         empty.className = "empty-state";
-        empty.textContent = "Nada planeado todavía.";
+        empty.textContent = futureFilterCategory === "all" ? "Nada planeado todavía." : "Nada en esta categoría.";
         card.appendChild(empty);
       } else {
         items.forEach(function (it) {
+          var cat = FUTURE_CATEGORIES[it.category] || FUTURE_CATEGORIES.idea;
           var row = document.createElement("div");
           row.className = "future-item" + (it.done ? " is-done" : "");
-          row.innerHTML = '<input type="checkbox"><span class="item-title"></span>' +
+          row.innerHTML = '<input type="checkbox"><span class="future-item-icon"></span><span class="item-title"></span>' +
             '<button class="icon-btn" type="button">✕</button>';
+          row.querySelector(".future-item-icon").textContent = cat.icon;
+          row.querySelector(".future-item-icon").title = cat.label;
           row.querySelector(".item-title").textContent = it.text;
           var cb = row.querySelector('input[type="checkbox"]');
           cb.checked = !!it.done;
@@ -2990,6 +3350,7 @@
     renderHabits();
     renderWeekQuickView();
     renderMonthSummary();
+    renderMonthCalendarFull();
     renderFutureLog();
   }
 
@@ -3027,11 +3388,11 @@
   function wireEvents() {
     document.getElementById("prevMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1);
-      renderMonthCalendar(); renderMonthSummary();
+      renderMonthCalendar(); renderMonthSummary(); renderMonthCalendarFull();
     });
     document.getElementById("nextMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
-      renderMonthCalendar(); renderMonthSummary();
+      renderMonthCalendar(); renderMonthSummary(); renderMonthCalendarFull();
     });
     document.getElementById("monthToggleBtn").addEventListener("click", function () {
       monthExpanded = !monthExpanded;
@@ -3044,11 +3405,11 @@
     });
     document.getElementById("prevSummaryMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1);
-      renderMonthSummary(); renderMonthCalendar();
+      renderMonthSummary(); renderMonthCalendar(); renderMonthCalendarFull();
     });
     document.getElementById("nextSummaryMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
-      renderMonthSummary(); renderMonthCalendar();
+      renderMonthSummary(); renderMonthCalendar(); renderMonthCalendarFull();
     });
     document.getElementById("summaryTodayBtn").addEventListener("click", function () {
       var today = new Date();
@@ -3081,13 +3442,33 @@
       futureCursor = startOfMonth(new Date());
       renderFutureLog();
     });
+    document.getElementById("futureFilterChips").addEventListener("click", function (e) {
+      var btn = e.target.closest(".future-filter-chip");
+      if (!btn) return;
+      futureFilterCategory = btn.getAttribute("data-cat");
+      renderFutureLog();
+    });
+
+    var activeFutureCategory = "idea";
+    document.getElementById("futureCategoryPicker").addEventListener("click", function (e) {
+      var btn = e.target.closest(".cat-chip");
+      if (!btn) return;
+      activeFutureCategory = btn.getAttribute("data-cat");
+      Array.prototype.forEach.call(document.querySelectorAll("#futureCategoryPicker .cat-chip"), function (b) {
+        b.classList.toggle("is-active", b === btn);
+      });
+    });
+
     document.getElementById("futureForm").addEventListener("submit", function (e) {
       e.preventDefault();
       var text = document.getElementById("futureText").value.trim();
       if (!text) return;
       var month = document.getElementById("futureMonthSelect").value;
-      state.futureLog.push({ id: newId(), month: month, text: text, done: false });
+      state.futureLog.push({ id: newId(), month: month, text: text, done: false, category: activeFutureCategory });
       document.getElementById("futureText").value = "";
+      // Si había un filtro activo que ocultaría lo recién agregado, lo quitamos
+      // para que el elemento nuevo sea visible de inmediato.
+      if (futureFilterCategory !== "all" && futureFilterCategory !== activeFutureCategory) futureFilterCategory = "all";
       renderFutureLog(); scheduleSave();
     });
     document.getElementById("prevWeekBtn").addEventListener("click", function () {
