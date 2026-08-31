@@ -1599,6 +1599,125 @@
     word-break: break-word;
   }
 
+  /* Objetivos: metas de largo plazo con hitos medibles */
+  .objetivos-section { margin-top: 20px; max-width: 760px; }
+  .objetivos-sub { margin: -8px 0 0; color: var(--muted); font-size: 0.88rem; line-height: 1.4; }
+
+  .goal-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    padding: 3px;
+    align-self: flex-start;
+  }
+  .goal-tab {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .goal-tab.is-active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+  .goal-tab .tab-count { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; color: var(--muted); }
+  .goal-tab.is-active .tab-count { color: var(--accent-ink); }
+
+  .goal-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .goal-card {
+    background: var(--surface-2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .goal-card.is-done { opacity: 0.75; }
+
+  .goal-card-head { display: flex; align-items: flex-start; gap: 9px; }
+  .goal-card-head input[type="checkbox"] {
+    margin-top: 3px;
+    width: 17px;
+    height: 17px;
+    accent-color: var(--accent);
+    flex: none;
+  }
+  .goal-title {
+    flex: 1;
+    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-weight: 600;
+    font-size: 1.02rem;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+  .goal-card.is-done .goal-title { text-decoration: line-through; color: var(--muted); }
+  .goal-period-tag {
+    flex: none;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    margin-top: 1px;
+  }
+
+  .goal-progress-row { display: flex; align-items: center; gap: 8px; }
+  .goal-progress-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+  .goal-progress-bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+  .goal-progress-label {
+    flex: none;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.74rem;
+    color: var(--muted);
+  }
+
+  .goal-milestones { display: flex; flex-direction: column; gap: 5px; margin: 2px 0 0 26px; }
+  .goal-milestone-item { display: flex; align-items: flex-start; gap: 7px; font-size: 0.86rem; line-height: 1.35; }
+  .goal-milestone-item input[type="checkbox"] {
+    margin-top: 2px;
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    flex: none;
+  }
+  .goal-milestone-item .item-title { flex: 1; word-break: break-word; }
+  .goal-milestone-item.is-done .item-title { text-decoration: line-through; color: var(--muted); }
+
+  .goal-milestone-form { display: flex; gap: 6px; margin: 2px 0 0 26px; }
+  .goal-milestone-form input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 6px 9px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--ink);
+  }
+  .goal-milestone-form button {
+    flex: none;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .goal-milestone-form button:hover { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); }
+
   /* Monthly summary */
   .month-summary-section { margin-top: 20px; }
   .summary-head { flex-wrap: wrap; gap: 10px; }
@@ -2127,6 +2246,30 @@
       </form>
       <div class="journal-timeline" id="journalTimeline"></div>
     </section>
+
+    <section class="col objetivos-section" id="objetivosSection" aria-label="Objetivos" hidden>
+      <div class="col-head"><h2>Objetivos</h2></div>
+      <p class="objetivos-sub">Tus metas más allá del día a día — con hitos para medir el avance real.</p>
+
+      <div class="goal-tabs" id="goalTabs">
+        <button type="button" class="goal-tab is-active" data-status="activos">Activos <span class="tab-count" id="goalCountActivos"></span></button>
+        <button type="button" class="goal-tab" data-status="completados">Completados <span class="tab-count" id="goalCountCompletados"></span></button>
+      </div>
+
+      <form class="add-form" id="goalForm">
+        <input type="text" id="goalTitle" placeholder="Nuevo objetivo… (ej. Lanzar el nuevo producto)" required maxlength="140">
+        <select id="goalPeriod" aria-label="Plazo">
+          <option value="">Sin plazo</option>
+          <option value="semana">Esta semana</option>
+          <option value="mes">Este mes</option>
+          <option value="trimestre">Este trimestre</option>
+          <option value="año">Este año</option>
+        </select>
+        <button type="submit">Agregar</button>
+      </form>
+
+      <div class="goal-list" id="goalList"></div>
+    </section>
   </div>
 
   <button type="button" class="fab-btn" id="fabAdd" aria-haspopup="true" aria-expanded="false" aria-label="Agregar">+</button>
@@ -2171,6 +2314,12 @@
     idea: { label: "Idea", icon: "💡" },
     proyecto: { label: "Proyecto", icon: "📁" }
   };
+  var GOAL_PERIODS = {
+    semana: "Esta semana",
+    mes: "Este mes",
+    trimestre: "Este trimestre",
+    "año": "Este año"
+  };
 
   var state = null;
   var monthCursor = startOfMonth(new Date()); // first day of the visible month
@@ -2187,6 +2336,8 @@
   var editingAgendaId = null;
   var taskFilterStatus = "pendiente";
   var futureFilterCategory = "all";
+  var goalFilterStatus = "activos";
+  var pendingMilestoneFocusGoalId = null;
 
   var PRIORITY_ORDER = { alta: 0, media: 1, baja: 2 };
 
@@ -2261,6 +2412,7 @@
       habits: Array.isArray(parsed.habits) ? parsed.habits : [],
       futureLog: Array.isArray(parsed.futureLog) ? parsed.futureLog : [],
       journal: Array.isArray(parsed.journal) ? parsed.journal : [],
+      goals: Array.isArray(parsed.goals) ? parsed.goals : [],
       top3: (parsed.top3 && typeof parsed.top3 === "object" && !Array.isArray(parsed.top3)) ? parsed.top3 : {},
       showDone: !!parsed.showDone
     };
@@ -2271,6 +2423,10 @@
     });
     state.agenda.forEach(function (e) { if (typeof e.done !== "boolean") e.done = false; });
     state.futureLog.forEach(function (it) { if (!FUTURE_CATEGORIES[it.category]) it.category = "idea"; });
+    state.goals.forEach(function (g) {
+      if (!Array.isArray(g.milestones)) g.milestones = [];
+      g.done = !!g.done;
+    });
     rolloverTasks();
   }
 
@@ -3435,6 +3591,139 @@
     });
   }
 
+  // ---- Objetivos: metas de largo plazo, con hitos opcionales ----
+
+  // Un objetivo con hitos se considera hecho solo cuando TODOS sus hitos
+  // están hechos (progreso real); sin hitos, usa su propio interruptor.
+  function isGoalDone(g) {
+    if (g.milestones.length) return g.milestones.every(function (m) { return m.done; });
+    return !!g.done;
+  }
+
+  function renderGoals() {
+    var list = document.getElementById("goalList");
+    if (!list) return;
+
+    var doneCount = state.goals.filter(isGoalDone).length;
+    document.getElementById("goalCountActivos").textContent = state.goals.length - doneCount;
+    document.getElementById("goalCountCompletados").textContent = doneCount;
+
+    var visible = state.goals.filter(function (g) {
+      return goalFilterStatus === "completados" ? isGoalDone(g) : !isGoalDone(g);
+    }).slice().sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+
+    list.innerHTML = "";
+    if (!visible.length) {
+      list.innerHTML = '<div class="empty-state">' +
+        (goalFilterStatus === "completados" ? "Aún no completas objetivos." : "Sin objetivos activos. Agrega el primero arriba.") +
+        "</div>";
+      return;
+    }
+
+    visible.forEach(function (g) {
+      var done = isGoalDone(g);
+      var card = document.createElement("div");
+      card.className = "goal-card" + (done ? " is-done" : "");
+
+      var head = document.createElement("div");
+      head.className = "goal-card-head";
+
+      if (!g.milestones.length) {
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!g.done;
+        cb.setAttribute("aria-label", "Marcar como completado: " + g.title);
+        cb.addEventListener("change", function () {
+          g.done = cb.checked; renderGoals(); scheduleSave();
+        });
+        head.appendChild(cb);
+      }
+
+      var title = document.createElement("span");
+      title.className = "goal-title";
+      title.textContent = g.title;
+      head.appendChild(title);
+
+      if (g.period && GOAL_PERIODS[g.period]) {
+        var tag = document.createElement("span");
+        tag.className = "goal-period-tag";
+        tag.textContent = GOAL_PERIODS[g.period];
+        head.appendChild(tag);
+      }
+
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "icon-btn";
+      del.textContent = "✕";
+      del.setAttribute("aria-label", "Eliminar objetivo: " + g.title);
+      del.addEventListener("click", function () {
+        state.goals = state.goals.filter(function (x) { return x.id !== g.id; });
+        renderGoals(); scheduleSave();
+      });
+      head.appendChild(del);
+
+      card.appendChild(head);
+
+      if (g.milestones.length) {
+        var doneMilestones = g.milestones.filter(function (m) { return m.done; }).length;
+        var pct = Math.round((doneMilestones / g.milestones.length) * 100);
+
+        var progressRow = document.createElement("div");
+        progressRow.className = "goal-progress-row";
+        progressRow.innerHTML = '<span class="goal-progress-bar"><span></span></span><span class="goal-progress-label"></span>';
+        progressRow.querySelector(".goal-progress-bar span").style.width = pct + "%";
+        progressRow.querySelector(".goal-progress-label").textContent = doneMilestones + "/" + g.milestones.length + " · " + pct + "%";
+        card.appendChild(progressRow);
+
+        var msList = document.createElement("div");
+        msList.className = "goal-milestones";
+        g.milestones.forEach(function (m) {
+          var row = document.createElement("div");
+          row.className = "goal-milestone-item" + (m.done ? " is-done" : "");
+          row.innerHTML = '<input type="checkbox"><span class="item-title"></span><button type="button" class="icon-btn">✕</button>';
+          row.querySelector(".item-title").textContent = m.text;
+          var mcb = row.querySelector('input[type="checkbox"]');
+          mcb.checked = !!m.done;
+          mcb.setAttribute("aria-label", "Marcar hito: " + m.text);
+          mcb.addEventListener("change", function () {
+            m.done = mcb.checked; renderGoals(); scheduleSave();
+          });
+          var mdel = row.querySelector(".icon-btn");
+          mdel.setAttribute("aria-label", "Eliminar hito: " + m.text);
+          mdel.addEventListener("click", function () {
+            g.milestones = g.milestones.filter(function (x) { return x.id !== m.id; });
+            renderGoals(); scheduleSave();
+          });
+          msList.appendChild(row);
+        });
+        card.appendChild(msList);
+      }
+
+      var msForm = document.createElement("form");
+      msForm.className = "goal-milestone-form";
+      msForm.setAttribute("data-goal-id", g.id);
+      msForm.innerHTML = '<input type="text" placeholder="Agregar hito…" maxlength="140"><button type="submit">+ Hito</button>';
+      msForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var input = msForm.querySelector("input");
+        var text = input.value.trim();
+        if (!text) return;
+        g.milestones.push({ id: newId(), text: text, done: false });
+        pendingMilestoneFocusGoalId = g.id;
+        renderGoals(); scheduleSave();
+      });
+      card.appendChild(msForm);
+
+      list.appendChild(card);
+    });
+
+    if (pendingMilestoneFocusGoalId) {
+      var toFocus = list.querySelector('.goal-milestone-form[data-goal-id="' + pendingMilestoneFocusGoalId + '"] input');
+      if (toFocus) toFocus.focus();
+      pendingMilestoneFocusGoalId = null;
+    }
+  }
+
   function renderAll() {
     renderWeekStrip();
     renderMonthCalendar();
@@ -3450,6 +3739,7 @@
     renderMonthCalendarFull();
     renderFutureLog();
     renderJournal();
+    renderGoals();
   }
 
   function scrollToCard(selector) {
@@ -3473,9 +3763,10 @@
     document.getElementById("monthSummarySection").hidden = mode !== "month";
     document.getElementById("futureLogSection").hidden = mode !== "future";
     document.getElementById("bitacoraSection").hidden = mode !== "bitacora";
+    document.getElementById("objetivosSection").hidden = mode !== "objetivos";
 
     // El toggle Día/Semana/Mes/Planificar solo aplica a esas 4 vistas; la
-    // Bitácora se abre únicamente desde el menú lateral.
+    // Bitácora y Objetivos se abren únicamente desde el menú lateral.
     document.getElementById("viewToggle").hidden = !isCoreView;
 
     document.getElementById("viewDayBtn").classList.toggle("is-active", mode === "day");
@@ -3486,6 +3777,7 @@
     document.getElementById("navHoy").classList.toggle("is-active", mode === "day");
     document.getElementById("navCalendario").classList.toggle("is-active", mode === "month");
     document.getElementById("navBitacora").classList.toggle("is-active", mode === "bitacora");
+    document.getElementById("navObjetivos").classList.toggle("is-active", mode === "objetivos");
 
     renderAll();
   }
@@ -3586,6 +3878,31 @@
       state.journal.push({ id: newId(), text: text, ts: Date.now() });
       document.getElementById("journalText").value = "";
       renderJournal(); scheduleSave();
+    });
+
+    document.getElementById("goalTabs").addEventListener("click", function (e) {
+      var btn = e.target.closest(".goal-tab");
+      if (!btn) return;
+      goalFilterStatus = btn.getAttribute("data-status");
+      Array.prototype.forEach.call(document.querySelectorAll(".goal-tab"), function (b) {
+        b.classList.toggle("is-active", b === btn);
+      });
+      renderGoals();
+    });
+
+    document.getElementById("goalForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var title = document.getElementById("goalTitle").value.trim();
+      if (!title) return;
+      var period = document.getElementById("goalPeriod").value;
+      state.goals.push({ id: newId(), title: title, period: period, done: false, milestones: [], createdAt: Date.now() });
+      document.getElementById("goalTitle").value = "";
+      document.getElementById("goalPeriod").value = "";
+      goalFilterStatus = "activos";
+      Array.prototype.forEach.call(document.querySelectorAll(".goal-tab"), function (b) {
+        b.classList.toggle("is-active", b.getAttribute("data-status") === "activos");
+      });
+      renderGoals(); scheduleSave();
     });
 
     document.getElementById("prevWeekBtn").addEventListener("click", function () {
@@ -3737,9 +4054,7 @@
     document.getElementById("navHabitos").addEventListener("click", function () {
       setViewMode("day"); scrollToCard("#habitsSection");
     });
-    document.getElementById("navObjetivos").addEventListener("click", function () {
-      setViewMode("day"); scrollToCard(".col-top3");
-    });
+    document.getElementById("navObjetivos").addEventListener("click", function () { setViewMode("objetivos"); });
     document.getElementById("navAjustes").addEventListener("click", toggleSettingsPopover);
 
     // Botón global "+"
@@ -3756,7 +4071,8 @@
       var target = btn.getAttribute("data-target");
       document.getElementById("fabMenu").hidden = true;
       document.getElementById("fabAdd").setAttribute("aria-expanded", "false");
-      if (viewMode !== "day") setViewMode("day");
+      if (target === "objetivo") { if (viewMode !== "objetivos") setViewMode("objetivos"); }
+      else if (viewMode !== "day") setViewMode("day");
       requestAnimationFrame(function () {
         if (target === "agenda") {
           document.getElementById("agendaForm").hidden = false;
@@ -3775,7 +4091,7 @@
           document.getElementById("habitsSection").scrollIntoView({ behavior: "smooth", block: "start" });
           document.getElementById("habitName").focus();
         } else if (target === "objetivo") {
-          document.querySelector(".col-top3").scrollIntoView({ behavior: "smooth", block: "start" });
+          document.getElementById("goalTitle").focus();
         }
       });
     });
