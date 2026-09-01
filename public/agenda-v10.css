@@ -3,6 +3,18 @@
 /* The weekly strip duplicated calendar information and consumed valuable space. */
 .week-quickview { display: none !important; }
 
+/* Quick Note duplicates Bitácora and was cramped into a narrow column next to
+   Hábitos; dropped from the Day dashboard (data is untouched — still visible
+   wherever else the app shows it, this only hides the Day-view card). */
+.board.view-day .col-notes { display: none !important; }
+
+/* The inline "+ hora" control on each task wasn't worth the space it took. */
+.task-time-slot { display: none !important; }
+
+/* Days a habit isn't scheduled for were nearly invisible (0.3 opacity, no
+   border), reading as a misaligned/missing checkbox rather than "not today". */
+.habit-cell.is-off { opacity: .55 !important; border: 1.5px dashed var(--border) !important; }
+
 /* Give the working area more room without making text tiny. */
 .main-content { max-width: 1680px !important; }
 
@@ -50,7 +62,7 @@ body { font-size: 16px; }
       "modes modes modes"
       "agenda top3 progress"
       "agenda tasks tasks"
-      "agenda habits notes" !important;
+      "agenda habits habits" !important;
     gap: 20px !important;
     align-items: start !important;
   }
@@ -64,14 +76,13 @@ body { font-size: 16px; }
   .main-content:has(> .board.view-day) .col-top3 { grid-area: top3; }
   .main-content:has(> .board.view-day) .col-progress { grid-area: progress; }
   .main-content:has(> .board.view-day) .col-tasks { grid-area: tasks; }
-  .main-content:has(> .board.view-day) .col-notes { grid-area: notes; }
   .main-content:has(> .board.view-day) > .habits-section { grid-area: habits; margin: 0 !important; }
   .board.view-day .col-agenda { min-height: 600px !important; height: 100% !important; }
   .board.view-day .col-top3,
   .board.view-day .col-progress { min-height: 205px !important; }
-  .board.view-day .col-tasks { min-height: 240px !important; }
-  .main-content:has(> .board.view-day) > .habits-section,
-  .board.view-day .col-notes { min-height: 205px !important; }
+  /* Tasks card: room for ~6-7 items without scrolling instead of just 3-4. */
+  .board.view-day .col-tasks { min-height: 420px !important; }
+  .main-content:has(> .board.view-day) > .habits-section { min-height: 205px !important; }
 }
 
 /* Tablet: true two-column composition, readable controls. */
@@ -82,11 +93,11 @@ body { font-size: 16px; }
     grid-template-areas:
       "agenda top3"
       "agenda progress"
-      "tasks tasks"
-      "notes notes" !important;
+      "tasks tasks" !important;
     gap: 18px !important;
   }
   .board.view-day .col-agenda { min-height: 560px !important; }
+  .board.view-day .col-tasks { min-height: 340px !important; }
   .habits-section { margin-top: 18px !important; }
 }
 
@@ -98,12 +109,11 @@ body { font-size: 16px; }
   .greeting-sub { font-size: .95rem !important; }
   .col { padding: 18px !important; border-radius: 16px !important; }
   .col-head h2 { font-size: 1.22rem !important; }
-  .board.view-day { display: grid !important; grid-template-columns: 1fr !important; grid-template-areas: "agenda" "top3" "progress" "tasks" "notes" !important; }
+  .board.view-day { display: grid !important; grid-template-columns: 1fr !important; grid-template-areas: "agenda" "top3" "progress" "tasks" !important; }
   .board.view-day .col-agenda,
   .board.view-day .col-tasks,
   .board.view-day .col-top3,
-  .board.view-day .col-progress,
-  .board.view-day .col-notes { min-height: 0 !important; height: auto !important; }
+  .board.view-day .col-progress { min-height: 0 !important; height: auto !important; }
   .agenda-datepicker { padding: 10px 8px !important; }
   .week-strip { gap: 3px !important; }
   .week-strip-day { min-width: 0 !important; }
