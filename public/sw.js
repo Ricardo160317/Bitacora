@@ -3,9 +3,11 @@
 // van directo al servidor, para que veas lo mismo en la tablet, el celular
 // y la PC.
 
-var CACHE_NAME = "bitacora-cache-v6";
+var CACHE_NAME = "bitacora-cache-v7";
 var FILES_TO_CACHE = [
   "/",
+  "/app-shell.html",
+  "/visual-fidelity.css",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png"
