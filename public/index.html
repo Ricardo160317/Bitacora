@@ -16,8 +16,9 @@
       return res.text();
     })
     .then(function (html) {
-      var fidelityLink = '<link rel="stylesheet" href="visual-fidelity.css?v=1">';
-      html = html.replace('</head>', fidelityLink + '\n</head>');
+      var fidelityLink = '<link rel="stylesheet" href="visual-fidelity.css?v=2">';
+      var alignmentLink = '<link rel="stylesheet" href="responsive-alignment.css?v=1">';
+      html = html.replace('</head>', fidelityLink + '\n' + alignmentLink + '\n</head>');
       document.open();
       document.write(html);
       document.close();
