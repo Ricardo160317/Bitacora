@@ -370,7 +370,9 @@
   .board.view-week .col-notes { display: flex; }
 
   .board.view-day {
-    grid-template-columns: 1.15fr 1fr 1fr;
+    /* Tareas necesita más aire para no cortar el texto en dos líneas;
+       Progreso/Nota son widgets compactos y no lo necesitan tanto. */
+    grid-template-columns: 1.05fr 1.25fr 0.85fr;
     grid-template-areas:
       "agenda top3 progress"
       "agenda tasks notes";
@@ -1225,14 +1227,14 @@
     color: var(--muted);
   }
 
-  .habit-table { display: flex; flex-direction: column; gap: 5px; overflow-x: auto; }
+  .habit-table { display: flex; flex-direction: column; gap: 2px; overflow-x: auto; }
 
   .habit-table-head, .habit-row {
     display: grid;
-    grid-template-columns: minmax(120px, 1.5fr) repeat(7, minmax(30px, 1fr)) 40px 30px;
+    grid-template-columns: minmax(110px, 1.5fr) repeat(7, minmax(24px, 1fr)) 34px 26px;
     align-items: center;
-    gap: 6px;
-    min-width: 460px;
+    gap: 5px;
+    min-width: 400px;
   }
 
   .habit-table-head span {
@@ -1253,26 +1255,26 @@
     border: none;
     border-bottom: 1px solid var(--border);
     border-radius: 0;
-    padding: 6px 0;
+    padding: 3px 0;
   }
   .habit-row:last-child { border-bottom: none; }
 
   .habit-label {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
+    gap: 5px;
+    font-size: 0.8rem;
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .habit-label .habit-emoji { flex: none; font-size: 1rem; }
+  .habit-label .habit-emoji { flex: none; font-size: 0.88rem; }
 
   .habit-cell {
     justify-self: center;
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     border: 1.5px solid var(--border);
     background: var(--bg);
@@ -1280,7 +1282,7 @@
     display: grid;
     place-items: center;
     color: transparent;
-    font-size: 0.72rem;
+    font-size: 0.6rem;
   }
   .habit-cell:hover { border-color: var(--muted); }
   .habit-cell.is-done { border-color: transparent; color: var(--accent-ink); }
@@ -1346,7 +1348,7 @@
   .habit-cell.is-off:hover { border-color: transparent; }
 
   @media (max-width: 720px) {
-    .habit-table-head, .habit-row { grid-template-columns: minmax(92px, 1.3fr) repeat(7, 26px) 36px 26px; }
+    .habit-table-head, .habit-row { grid-template-columns: minmax(84px, 1.3fr) repeat(7, 20px) 30px 22px; }
   }
 
   /* ---------------------------------------------------------------- */
