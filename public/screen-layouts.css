@@ -1,0 +1,49 @@
+/* Screen-specific layout pass. Each module owns its geometry; avoids global CSS collisions. */
+
+:root{--sl-gap:20px;--sl-max:1680px}
+
+/* Desktop canvas uses available viewport instead of leaving a large dead area. */
+@media (min-width:1101px){
+  .main-content{max-width:var(--sl-max)!important;width:100%!important;margin:0 auto!important;padding:30px clamp(28px,3vw,54px) 96px!important}
+  .sidebar{width:232px!important;padding:28px 20px 24px!important}
+  .nav-item{font-size:1rem!important;padding:12px 14px!important}
+  .nav-icon{font-size:1.05rem!important;width:20px!important}
+  .brand-line1{font-size:1.08rem!important}.brand-line2{font-size:.78rem!important}
+  .sidebar-quote{font-size:.88rem!important;line-height:1.5!important;color:rgba(255,255,255,.72)!important;padding:16px 10px 0!important}
+
+  /* BITACORA: editorial 70/30 layout, with clean aligned columns. */
+  .main-content:has(#bitacoraSection.journal-premium:not([hidden])){max-width:var(--sl-max)!important;width:100%!important;display:block!important}
+  #bitacoraSection.journal-premium{width:100%!important;display:grid!important;grid-template-columns:minmax(0,2.15fr) minmax(330px,.85fr)!important;gap:var(--sl-gap)!important;align-items:start!important}
+  #bitacoraSection.journal-premium>.col-head,#bitacoraSection.journal-premium>.bitacora-sub{grid-column:1/-1!important}
+  #bitacoraSection .journal-editor-card{grid-column:1!important;grid-row:3!important}
+  #bitacoraSection .journal-history-card{grid-column:1!important;grid-row:4!important}
+  #bitacoraSection .journal-side{grid-column:2!important;grid-row:3/5!important;display:flex!important;flex-direction:column!important;gap:var(--sl-gap)!important}
+  #bitacoraSection .journal-editor-card,#bitacoraSection .journal-history-card,#bitacoraSection .journal-side-card{width:100%!important;min-width:0!important;padding:24px!important}
+  #bitacoraSection #journalText{min-height:220px!important;font-size:1rem!important}
+  #bitacoraSection .journal-premium #journalForm>button[type=submit]{min-width:190px!important}
+
+  /* Other full-screen modules should occupy the same usable canvas without inheriting Bitacora grid rules. */
+  .main-content:has(> .finance-section:not([hidden])),
+  .main-content:has(> .objetivos-section:not([hidden])),
+  .main-content:has(> .habits-section:not([hidden])){max-width:var(--sl-max)!important;width:100%!important}
+}
+
+/* Tablet: readable rail + one-column Bitacora content, side cards in two columns. */
+@media (max-width:1100px) and (min-width:701px){
+  .sidebar{width:92px!important;padding:22px 10px!important}.nav-item{padding:12px 8px!important;font-size:.86rem!important}.nav-label{display:none!important}.nav-icon{font-size:1.15rem!important;margin:auto!important}.sidebar-quote{display:none!important}
+  #bitacoraSection.journal-premium{grid-template-columns:1fr!important;gap:16px!important}
+  #bitacoraSection.journal-premium>.col-head,#bitacoraSection.journal-premium>.bitacora-sub,#bitacoraSection .journal-editor-card,#bitacoraSection .journal-history-card,#bitacoraSection .journal-side{grid-column:1!important;grid-row:auto!important}
+  #bitacoraSection .journal-side{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
+  #bitacoraSection .journal-editor-card,#bitacoraSection .journal-history-card,#bitacoraSection .journal-side-card{padding:20px!important}
+}
+
+/* Phone: natural vertical flow, no fixed heights, no clipped text. */
+@media (max-width:700px){
+  #bitacoraSection.journal-premium{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;width:100%!important}
+  #bitacoraSection.journal-premium>.col-head,#bitacoraSection.journal-premium>.bitacora-sub,#bitacoraSection .journal-editor-card,#bitacoraSection .journal-history-card,#bitacoraSection .journal-side{grid-column:1!important;grid-row:auto!important;width:100%!important;min-width:0!important}
+  #bitacoraSection .journal-side{display:grid!important;grid-template-columns:1fr!important;gap:12px!important}
+  #bitacoraSection .journal-editor-card,#bitacoraSection .journal-history-card,#bitacoraSection .journal-side-card{padding:16px!important;border-radius:15px!important}
+  #bitacoraSection #journalText{min-height:150px!important;font-size:16px!important}
+  #bitacoraSection .journal-types{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #bitacoraSection .journal-type{width:100%!important;text-align:center!important}
+}
