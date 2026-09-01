@@ -11,6 +11,19 @@
 /* The inline "+ hora" control on each task wasn't worth the space it took. */
 .task-time-slot { display: none !important; }
 
+/* Semana: Hábitos and Nota rápida were squeezed in next to a half-width week
+   strip. Semana now takes the full row (each day gets ~50% more room), and
+   Tareas pendientes (reusing the same card as the Día view) replaces them
+   below instead of leaving that space empty. */
+.board.view-week .col-notes,
+.board.view-week ~ .habits-section { display: none !important; }
+.board.view-week .col-week { grid-column: 1 / -1 !important; }
+.board.view-week .col-tasks { display: flex !important; grid-column: 1 / -1 !important; }
+.week-panorama-grid .week-day-card { padding: 12px 10px; gap: 8px; }
+.week-day-card .wd-name { font-size: .72rem; }
+.week-day-card .wd-num { font-size: 1rem; }
+.week-day-card .wd-event, .week-day-card .wd-task { font-size: .78rem; }
+
 /* Days a habit isn't scheduled for were nearly invisible (0.3 opacity, no
    border), reading as a misaligned/missing checkbox rather than "not today". */
 .habit-cell.is-off { opacity: .55 !important; border: 1.5px dashed var(--border) !important; }

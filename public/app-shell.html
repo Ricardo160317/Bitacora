@@ -3775,8 +3775,7 @@
       renderWeekQuickView();
     } else if (viewMode === "week") {
       renderWeekPanorama();
-      renderNotes();
-      renderHabits();
+      renderTasks();
     } else if (viewMode === "month") {
       renderMonthView();
     } else if (viewMode === "future") {
@@ -3804,7 +3803,7 @@
     board.classList.toggle("view-week", mode === "week");
     board.classList.toggle("view-day", mode === "day");
     board.hidden = !isDayOrWeek;
-    document.getElementById("habitsSection").hidden = !isDayOrWeek;
+    document.getElementById("habitsSection").hidden = mode !== "day";
     document.getElementById("weekQuickView").hidden = mode !== "day";
     document.getElementById("monthSummarySection").hidden = mode !== "month";
     document.getElementById("futureLogSection").hidden = mode !== "future";
