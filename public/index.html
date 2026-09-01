@@ -13,8 +13,8 @@
   fetch('app-shell.html', { cache: 'no-store', credentials: 'same-origin' })
     .then(function (res) { if (!res.ok) throw new Error('No se pudo cargar la aplicación'); return res.text(); })
     .then(function (html) {
-      var styles = '<link rel="stylesheet" href="visual-fidelity.css?v=10">\n<link rel="stylesheet" href="responsive-alignment.css?v=2">\n<link rel="stylesheet" href="agenda-v10.css?v=10">\n<link rel="stylesheet" href="navigation-enhancements.css?v=1">\n<link rel="stylesheet" href="finance.css?v=1">';
-      var scripts = '<script src="navigation-enhancements.js?v=1" defer><\/script>\n<script src="finance.js?v=1" defer><\/script>';
+      var styles = '<link rel="stylesheet" href="visual-fidelity.css?v=10">\n<link rel="stylesheet" href="responsive-alignment.css?v=2">\n<link rel="stylesheet" href="agenda-v10.css?v=10">\n<link rel="stylesheet" href="navigation-enhancements.css?v=1">\n<link rel="stylesheet" href="finance.css?v=1">\n<link rel="stylesheet" href="journal-premium.css?v=1">';
+      var scripts = '<script src="navigation-enhancements.js?v=1" defer><\/script>\n<script src="finance.js?v=1" defer><\/script>\n<script src="journal-premium.js?v=1" defer><\/script>';
       html = html.replace('</head>', styles + '\n' + scripts + '\n</head>');
       document.open(); document.write(html); document.close();
     })
