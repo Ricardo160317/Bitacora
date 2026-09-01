@@ -958,9 +958,8 @@
     border-radius: 0;
     padding: 10px 2px;
     display: flex;
-    flex-wrap: wrap;
     align-items: flex-start;
-    gap: 5px 9px;
+    gap: 9px;
   }
   .task-item:last-child { border-bottom: none; }
 
@@ -970,6 +969,24 @@
     height: 17px;
     accent-color: var(--accent);
     flex: none;
+  }
+
+  .task-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 8px;
+  }
+
+  .task-actions {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding-top: 1px;
   }
 
   .task-item.is-done .item-title { text-decoration: line-through; color: var(--muted); }
@@ -987,12 +1004,10 @@
     cursor: pointer;
     display: grid;
     place-items: center;
-    margin-top: 1px;
   }
   .progress-toggle-btn.is-active { background: var(--amber-soft); color: var(--amber); border-color: var(--amber); }
 
-  .item-title { flex: 1; font-size: 0.92rem; line-height: 1.35; word-break: break-word; }
-  .task-item .item-title { flex-basis: 100%; width: 100%; }
+  .item-title { flex: 1 1 auto; min-width: 100px; font-size: 0.92rem; line-height: 1.35; word-break: break-word; }
 
   .icon-btn {
     flex: none;
@@ -3044,11 +3059,15 @@
           (t.status === "progreso" ? " is-progress" : "");
         li.innerHTML = '<input type="checkbox">' +
           '<span class="task-time-slot"></span>' +
+          '<div class="task-main">' +
           '<span class="priority-tag" data-p="' + t.priority + '">' + t.priority + '</span>' +
           '<span class="item-title"></span>' +
+          '</div>' +
+          '<div class="task-actions">' +
           '<span class="task-date-slot"></span>' +
           '<button type="button" class="progress-toggle-btn">▶</button>' +
-          '<button class="icon-btn" type="button">✕</button>';
+          '<button class="icon-btn" type="button">✕</button>' +
+          '</div>';
         li.querySelector(".item-title").textContent = t.text;
 
         var cb = li.querySelector('input[type="checkbox"]');
