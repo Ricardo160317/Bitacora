@@ -1,0 +1,370 @@
+/* Visual fidelity pass — approved warm premium agenda reference.
+   Intentionally CSS-only: no data model, API or behavior changes. */
+
+:root {
+  --vf-cream: #f5f0e7;
+  --vf-paper: #fffdf8;
+  --vf-green: #42563d;
+  --vf-green-deep: #31432e;
+  --vf-green-soft: #e7ecdf;
+  --vf-orange: #d57b1d;
+  --vf-tan: #eee6d8;
+  --vf-border: #e4dccf;
+  --vf-text: #28271f;
+  --vf-muted: #777467;
+  --vf-shadow: 0 8px 24px rgba(54, 49, 37, .07), 0 1px 2px rgba(54, 49, 37, .04);
+}
+
+/* Overall canvas */
+body {
+  background: var(--vf-cream);
+  color: var(--vf-text);
+}
+
+.shell { background: var(--vf-cream); }
+
+/* Strong olive navigation rail — key visual difference from previous build */
+.sidebar {
+  width: 220px;
+  padding: 30px 18px 24px;
+  gap: 30px;
+  border-right: 0;
+  background: linear-gradient(180deg, #465d40 0%, #3d5138 100%);
+  color: #fffaf0;
+  box-shadow: 10px 0 30px rgba(47, 60, 43, .08);
+}
+.sidebar-brand { padding: 0 10px 6px; gap: 12px; }
+.brand-icon { font-size: 1.55rem; filter: grayscale(.15); }
+.brand-line1 { color: #fffdf5; font-size: 1rem; letter-spacing: .08em; }
+.brand-line2 { color: rgba(255,255,255,.67); font-size: .72rem; letter-spacing: .1em; margin-top: 2px; }
+.sidebar-nav { gap: 7px; }
+.nav-item {
+  color: rgba(255,255,255,.72);
+  padding: 11px 13px;
+  border-radius: 12px;
+  font-size: .92rem;
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.nav-item:hover {
+  background: rgba(255,255,255,.09);
+  color: #fff;
+  transform: translateX(2px);
+}
+.nav-item.is-active {
+  background: rgba(255,255,255,.16);
+  color: #fff;
+  box-shadow: inset 3px 0 0 #e7cda5;
+}
+.nav-icon { opacity: .95; }
+.sidebar-quote {
+  color: rgba(255,255,255,.58);
+  padding: 14px 10px 0;
+  border-top: 1px solid rgba(255,255,255,.11);
+  font-size: .78rem;
+}
+
+/* Main stage */
+.main-content {
+  max-width: 1540px;
+  margin: 0 auto;
+  padding: 34px 38px 90px;
+}
+.topbar { margin-bottom: 22px; align-items: center; }
+.greeting h1 {
+  font-size: clamp(1.9rem, 1.25rem + 1.6vw, 2.65rem);
+  letter-spacing: -.025em;
+  color: #30372b;
+}
+.greeting-sub { font-size: .98rem; color: #858073; margin-top: 5px; }
+.date-pill,
+.save-status,
+.avatar-btn {
+  background: rgba(255,253,248,.9);
+  border-color: var(--vf-border);
+  box-shadow: none;
+}
+.date-pill { padding: 10px 15px; }
+
+/* Top mode navigation should feel like editorial tabs, not a segmented control */
+.view-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  gap: 22px;
+  border: 0;
+  border-bottom: 1px solid #ded6c9;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  margin: 0 0 24px;
+}
+.view-toggle button {
+  border-radius: 0;
+  padding: 9px 4px 12px;
+  color: #888274;
+  font-size: .84rem;
+  letter-spacing: .02em;
+  position: relative;
+}
+.view-toggle button.is-active {
+  background: transparent;
+  color: var(--vf-green-deep);
+}
+.view-toggle button.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--vf-green);
+}
+
+/* Premium card system */
+.col,
+.week-quickview {
+  background: var(--vf-paper);
+  border: 1px solid rgba(224,215,201,.78);
+  border-radius: 20px;
+  box-shadow: var(--vf-shadow);
+}
+.col { padding: 21px 22px; gap: 15px; }
+.week-quickview { padding: 18px 20px; }
+.col-head h2,
+.week-quickview .col-head h2 {
+  font-size: 1.18rem !important;
+  color: #33362d;
+  letter-spacing: -.015em;
+}
+.add-toggle-btn {
+  color: #53664b;
+  background: #edf0e8;
+  padding: 7px 10px;
+  border-radius: 10px;
+}
+.add-toggle-btn:hover { background: #e2e8dc; }
+
+/* DAY — compose the page as one intentional dashboard, including siblings
+   that previously lived outside the .board element. */
+@media (min-width: 1101px) {
+  .main-content:has(> .board.view-day) {
+    display: grid;
+    grid-template-columns: minmax(440px, 1.28fr) minmax(300px, .9fr) minmax(265px, .72fr);
+    grid-template-areas:
+      "topbar topbar topbar"
+      "modes modes modes"
+      "agenda top3 progress"
+      "agenda tasks habits"
+      "agenda tasks notes"
+      "week week week";
+    gap: 18px;
+    align-items: start;
+  }
+  .main-content:has(> .board.view-day) > .topbar { grid-area: topbar; margin-bottom: 0; }
+  .main-content:has(> .board.view-day) > .view-toggle { grid-area: modes; margin-bottom: 2px; }
+  .main-content:has(> .board.view-day) > .board.view-day { display: contents; }
+  .main-content:has(> .board.view-day) .col-agenda { grid-area: agenda; }
+  .main-content:has(> .board.view-day) .col-top3 { grid-area: top3; }
+  .main-content:has(> .board.view-day) .col-progress { grid-area: progress; }
+  .main-content:has(> .board.view-day) .col-tasks { grid-area: tasks; }
+  .main-content:has(> .board.view-day) .col-notes { grid-area: notes; }
+  .main-content:has(> .board.view-day) > .habits-section { grid-area: habits; margin: 0; }
+  .main-content:has(> .board.view-day) > .week-quickview { grid-area: week; margin: 0; }
+  .main-content:has(> .board.view-day) > .month-summary-section,
+  .main-content:has(> .board.view-day) > .future-log-section,
+  .main-content:has(> .board.view-day) > .bitacora-section,
+  .main-content:has(> .board.view-day) > .objetivos-section { grid-column: 1 / -1; }
+
+  .board.view-day .col-agenda { min-height: 720px; }
+  .board.view-day .col-tasks { min-height: 390px; }
+  .board.view-day .col-top3,
+  .board.view-day .col-progress,
+  .board.view-day .col-notes,
+  .main-content:has(> .board.view-day) > .habits-section { min-height: 0; }
+}
+
+/* Agenda is the visual anchor */
+.col-agenda {
+  padding: 23px 24px;
+}
+.col-agenda .col-head { align-items: center; }
+.agenda-datepicker {
+  background: #f7f3eb;
+  border: 1px solid #ebe4d8;
+  border-radius: 15px;
+  padding: 10px 11px;
+  gap: 9px;
+}
+.month-label { font-family: "Karla", sans-serif; font-weight: 600; font-size: .8rem; }
+.week-strip { gap: 6px; }
+.week-strip-day {
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  padding: 6px 2px;
+}
+.week-strip-day:hover { background: #ece8df; }
+.week-strip-day.is-today { border: 0; box-shadow: inset 0 0 0 1px #ddb37d; }
+.week-strip-day.is-selected {
+  background: var(--vf-green);
+  border: 0;
+}
+.week-strip-day.is-selected .dow,
+.week-strip-day.is-selected .num { color: white; }
+.week-strip-day.is-selected .dots .d-agenda,
+.week-strip-day.is-selected .dots .d-tasks { background: #fff; }
+
+.timeline { margin-top: 3px; }
+.timeline-item {
+  position: relative;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.timeline-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 55px;
+  top: 35px;
+  bottom: -10px;
+  width: 1px;
+  background: #e5ded2;
+}
+
+/* Top 3: warm emphasis without turning the whole card orange */
+.col-top3 {
+  background: linear-gradient(180deg, #fffdf8 0%, #fffaf1 100%);
+  border-color: #eadcc9;
+}
+.top3-sub { color: #a16e37; font-size: .76rem; text-transform: uppercase; letter-spacing: .08em; }
+.top3-hint { color: #9b8c78; font-style: italic; }
+.top3-list > * { border-color: #eadfce !important; }
+
+/* Progress: cleaner ring and readable stats */
+.progress-body { justify-content: center; gap: 22px; }
+.progress-ring {
+  width: 94px;
+  height: 94px;
+  box-shadow: inset 0 0 0 8px rgba(255,255,255,.88);
+}
+#progressPct { font-size: 1.25rem; font-family: "Fraunces", Georgia, serif; }
+.progress-stats { gap: 8px; }
+.progress-hint { color: #8c8678; }
+
+/* Tasks should read like a focused working list */
+.task-tabs {
+  background: #f4f0e8;
+  padding: 4px;
+  border-radius: 12px;
+  gap: 3px;
+}
+.task-tab { border: 0 !important; border-radius: 9px !important; }
+.task-tab.is-active { background: #fffdf8 !important; box-shadow: 0 1px 4px rgba(60,53,43,.08); }
+.task-item { border-bottom-color: #ece5da !important; }
+
+/* Habits become a compact secondary card in the right rail */
+.main-content:has(> .board.view-day) > .habits-section {
+  padding: 18px 18px 16px;
+  overflow: hidden;
+}
+.main-content:has(> .board.view-day) > .habits-section .habits-head-row { gap: 5px; }
+.main-content:has(> .board.view-day) > .habits-section .habits-week-label { display: none; }
+.main-content:has(> .board.view-day) > .habits-section .habit-table { overflow-x: auto; }
+.main-content:has(> .board.view-day) > .habits-section .habit-table-head,
+.main-content:has(> .board.view-day) > .habits-section .habit-row {
+  grid-template-columns: minmax(92px, 1.25fr) repeat(7, 23px) 34px 24px;
+  min-width: 355px;
+  gap: 4px;
+}
+.main-content:has(> .board.view-day) > .habits-section .habit-cell { width: 20px; height: 20px; }
+.main-content:has(> .board.view-day) > .habits-section .habit-label { font-size: .79rem; }
+
+/* Quick note is deliberately small */
+.col-notes textarea { min-height: 72px; max-height: 105px; }
+.col-notes .note-list-compact { max-height: 125px; overflow: auto; }
+.note-tabs { gap: 4px; }
+.note-tab { padding: 6px 4px; border-radius: 8px; }
+
+/* Bottom weekly strip — wide, airy, low visual weight */
+.week-quickview .col-head { margin-bottom: 12px; }
+.week-quick-grid { gap: 10px; }
+.week-quick-card {
+  box-shadow: none;
+  background: #fbf8f2;
+  border-color: #e8e0d4;
+  padding: 12px 7px;
+}
+.week-quick-card:hover { transform: translateY(-1px); border-color: #d8cdbd; }
+.week-quick-card.is-selected {
+  background: var(--vf-green);
+  border-color: var(--vf-green);
+}
+.week-quick-card.is-selected .wq-name,
+.week-quick-card.is-selected .wq-num,
+.week-quick-card.is-selected .wq-pct { color: #fff; }
+
+/* Global add action */
+.fab-btn {
+  width: 58px;
+  height: 58px;
+  right: 30px;
+  bottom: 30px;
+  background: var(--vf-green);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(49,67,46,.28);
+}
+.fab-btn:hover { background: var(--vf-green-deep); }
+.fab-menu { border-radius: 16px; border-color: var(--vf-border); }
+
+/* Inputs */
+.add-form input[type="text"],
+.add-form input[type="time"],
+.add-form select,
+.add-form textarea {
+  background: #faf7f1;
+  border-color: #e5ddd1;
+}
+.add-form button[type="submit"] {
+  background: var(--vf-green);
+  color: #fff;
+}
+
+/* Tablet: keep original behavior, but preserve the dark rail */
+@media (max-width: 1100px) and (min-width: 701px) {
+  .sidebar { width: 78px; background: linear-gradient(180deg, #465d40 0%, #3d5138 100%); }
+  .main-content { padding: 26px 22px 92px; }
+  .board.view-day {
+    grid-template-columns: 1.18fr .82fr;
+    grid-template-areas:
+      "agenda top3"
+      "agenda progress"
+      "tasks tasks"
+      "notes notes";
+  }
+  .habits-section { margin-top: 18px; }
+}
+
+/* Mobile: premium cards, bottom nav retains readability */
+@media (max-width: 700px) {
+  .main-content { padding: 20px 14px 104px; }
+  .sidebar {
+    background: #40553b;
+    border-top: 0;
+    box-shadow: 0 -8px 22px rgba(40,50,37,.12);
+  }
+  .nav-item { color: rgba(255,255,255,.7); }
+  .nav-item.is-active { background: rgba(255,255,255,.13); color: white; box-shadow: none; }
+  .view-toggle { overflow-x: auto; gap: 18px; }
+  .view-toggle button { flex: none; }
+  .col, .week-quickview { border-radius: 17px; }
+  .board.view-day { gap: 14px; }
+  .habits-section, .week-quickview { margin-top: 14px; }
+}
+
+/* Respect the app's explicit dark theme instead of forcing cream into it. */
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .shell { background: var(--bg); color: var(--ink); }
+:root[data-theme="dark"] .col,
+:root[data-theme="dark"] .week-quickview { background: var(--surface); border-color: var(--border); }
+:root[data-theme="dark"] .agenda-datepicker,
+:root[data-theme="dark"] .task-tabs,
+:root[data-theme="dark"] .week-quick-card { background: var(--surface-2); border-color: var(--border); }
