@@ -958,8 +958,9 @@
     border-radius: 0;
     padding: 10px 2px;
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
-    gap: 9px;
+    gap: 5px 9px;
   }
   .task-item:last-child { border-bottom: none; }
 
@@ -991,6 +992,7 @@
   .progress-toggle-btn.is-active { background: var(--amber-soft); color: var(--amber); border-color: var(--amber); }
 
   .item-title { flex: 1; font-size: 0.92rem; line-height: 1.35; word-break: break-word; }
+  .task-item .item-title { flex-basis: 100%; width: 100%; }
 
   .icon-btn {
     flex: none;
@@ -1048,6 +1050,36 @@
   .task-time-input {
     flex: none;
     width: 92px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.78rem;
+    border: 1px solid var(--accent);
+    border-radius: 7px;
+    padding: 1px 4px;
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  .task-date-slot { display: contents; }
+
+  .task-date {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    border-radius: 50%;
+    font-size: 0.62rem;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    margin-top: 1px;
+  }
+  .task-date:hover { color: var(--accent-ink); border-color: var(--accent); }
+
+  .task-date-input {
+    flex: none;
+    width: 128px;
     font-family: "IBM Plex Mono", ui-monospace, monospace;
     font-size: 0.78rem;
     border: 1px solid var(--accent);
@@ -2332,6 +2364,7 @@
   var hasInk = false;
   var lastPt = null;
   var editingTaskTimeId = null;
+  var editingTaskDateId = null;
   var editingAgendaId = null;
   var taskFilterStatus = "pendiente";
   var futureFilterCategory = "all";
@@ -3013,6 +3046,7 @@
           '<span class="task-time-slot"></span>' +
           '<span class="priority-tag" data-p="' + t.priority + '">' + t.priority + '</span>' +
           '<span class="item-title"></span>' +
+          '<span class="task-date-slot"></span>' +
           '<button type="button" class="progress-toggle-btn">▶</button>' +
           '<button class="icon-btn" type="button">✕</button>';
         li.querySelector(".item-title").textContent = t.text;
@@ -3040,6 +3074,7 @@
           renderAll(); scheduleSave();
         });
         renderTaskTimeSlot(li.querySelector(".task-time-slot"), t);
+        renderTaskDateSlot(li.querySelector(".task-date-slot"), t);
         list.appendChild(li);
       });
     }
@@ -3076,6 +3111,46 @@
       });
       slot.appendChild(btn);
     }
+  }
+
+  function renderTaskDateSlot(slot, t) {
+    slot.innerHTML = "";
+    if (editingTaskDateId === t.id) {
+      var input = document.createElement("input");
+      input.type = "date";
+      input.className = "task-date-input";
+      input.value = t.day;
+      slot.appendChild(input);
+      input.focus();
+      var committed = false;
+      function commit() {
+        if (committed) return;
+        committed = true;
+        if (input.value) t.day = input.value;
+        editingTaskDateId = null;
+        renderAll(); scheduleSave();
+      }
+      input.addEventListener("change", commit);
+      input.addEventListener("blur", commit);
+    } else {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "task-date";
+      btn.textContent = "📅";
+      btn.title = "Fecha: " + formatShortDate(t.day) + " (clic para mover)";
+      btn.setAttribute("aria-label", "Cambiar fecha de la tarea: " + t.text + ", fecha actual " + formatShortDate(t.day));
+      btn.addEventListener("click", function () {
+        editingTaskDateId = t.id;
+        renderTasks();
+      });
+      slot.appendChild(btn);
+    }
+  }
+
+  function formatShortDate(iso) {
+    var parts = iso.split("-").map(Number);
+    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3);
   }
 
   function formatLongDate(iso) {
