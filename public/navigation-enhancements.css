@@ -1,0 +1,72 @@
+/* Functional navigation + agenda density enhancements */
+
+/* Use the horizontal space in agenda: time, title/duration and actions share one row. */
+.timeline-item:not(.is-editing) {
+  grid-template-columns: 24px minmax(0,1fr) auto !important;
+  align-items: center !important;
+  column-gap: 10px !important;
+}
+.timeline-item:not(.is-editing) .timeline-body {
+  display: grid !important;
+  grid-template-columns: 72px minmax(120px,1fr) auto !important;
+  align-items: center !important;
+  column-gap: 12px !important;
+  min-width: 0;
+}
+.timeline-item:not(.is-editing) .timeline-time { font-size: .92rem !important; font-weight: 700; }
+.timeline-item:not(.is-editing) .timeline-title { font-size: .96rem !important; min-width: 0; overflow-wrap: anywhere; }
+.timeline-item:not(.is-editing) .timeline-duration { margin: 0 !important; white-space: nowrap; font-size: .78rem !important; }
+.timeline-actions { display: flex !important; align-items: center; gap: 4px; opacity: .72; }
+.timeline-item:hover .timeline-actions { opacity: 1; }
+
+/* Dedicated habits mode: sidebar button now opens a real focused screen. */
+body.habits-focus .board.view-day > .col,
+body.habits-focus .week-quickview { display: none !important; }
+body.habits-focus .habits-section {
+  display: block !important;
+  width: min(100%, 980px) !important;
+  min-height: 420px !important;
+  height: auto !important;
+  margin: 18px 0 0 !important;
+  padding: 24px !important;
+  overflow: visible !important;
+}
+body.habits-focus .main-content:has(> .board.view-day) {
+  display: block !important;
+}
+body.habits-focus .main-content:has(> .board.view-day) > .topbar,
+body.habits-focus .main-content:has(> .board.view-day) > .view-toggle { margin-bottom: 14px !important; }
+body.habits-focus .habit-table-head,
+body.habits-focus .habit-row { grid-template-columns: minmax(190px,1.6fr) repeat(7,minmax(42px,1fr)) 52px 36px !important; }
+
+/* Settings is a visible drawer instead of the tiny avatar popover. */
+.bitacora-settings-backdrop {
+  position: fixed; inset: 0; z-index: 80; background: rgba(32,39,29,.24); backdrop-filter: blur(2px);
+}
+.bitacora-settings-panel {
+  position: fixed; z-index: 81; top: 0; right: 0; bottom: 0; width: min(390px,92vw);
+  box-sizing: border-box; padding: 28px 24px; background: var(--surface); border-left: 1px solid var(--border);
+  box-shadow: -12px 0 32px rgba(36,44,32,.12); display: flex; flex-direction: column; gap: 20px;
+}
+.bitacora-settings-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.bitacora-settings-head h2 { margin:0; font-family:"Fraunces",ui-serif,Georgia,serif; font-size:1.45rem; }
+.bitacora-settings-close { border:0; background:var(--surface-2); border-radius:50%; width:34px; height:34px; cursor:pointer; }
+.bitacora-setting-group { border-top:1px solid var(--border); padding-top:16px; }
+.bitacora-setting-group h3 { margin:0 0 10px; font-size:.92rem; }
+.bitacora-setting-group p { margin:0 0 12px; color:var(--muted); font-size:.84rem; line-height:1.45; }
+.bitacora-setting-row { display:flex; gap:8px; flex-wrap:wrap; }
+.bitacora-setting-btn { border:1px solid var(--border); background:var(--surface-2); color:var(--ink); border-radius:10px; padding:9px 12px; font:inherit; font-size:.84rem; cursor:pointer; }
+.bitacora-setting-btn.is-active { border-color:var(--accent); background:var(--accent-soft); color:var(--accent-ink); font-weight:600; }
+.bitacora-setting-btn.danger { margin-top:auto; color:var(--danger); width:100%; }
+body.ui-compact .col, body.ui-compact .habits-section { padding-top:14px !important; padding-bottom:14px !important; }
+body.ui-compact .timeline-item, body.ui-compact .task-item { padding-top:7px !important; padding-bottom:7px !important; }
+html.ui-font-large { font-size: 17px; }
+
+@media (max-width:700px) {
+  .timeline-item:not(.is-editing) { grid-template-columns: 20px minmax(0,1fr) !important; align-items:start !important; }
+  .timeline-item:not(.is-editing) .timeline-body { grid-template-columns: 62px minmax(0,1fr) !important; gap:4px 8px !important; }
+  .timeline-item:not(.is-editing) .timeline-duration { grid-column:2; }
+  .timeline-actions { grid-column:2; justify-self:end; margin-top:4px; }
+  body.habits-focus .habits-section { padding:16px !important; min-height:0 !important; }
+  .bitacora-settings-panel { padding:22px 18px calc(90px + env(safe-area-inset-bottom)); }
+}
