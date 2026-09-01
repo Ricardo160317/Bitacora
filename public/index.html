@@ -607,8 +607,7 @@
   }
   .week-day-card.is-selected .wd-name,
   .week-day-card.is-selected .wd-num,
-  .week-day-card.is-selected .wd-empty,
-  .week-day-card.is-selected .wd-load-label { color: var(--accent-ink); }
+  .week-day-card.is-selected .wd-empty { color: var(--accent-ink); }
 
   .wd-head {
     display: flex;
@@ -732,7 +731,7 @@
     font-style: italic;
   }
 
-  .today-btn, .ghost-btn {
+  .ghost-btn {
     align-self: flex-start;
     border: 1px solid var(--border);
     background: var(--surface-2);
@@ -743,7 +742,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .today-btn:hover, .ghost-btn:hover { background: var(--accent-soft); }
+  .ghost-btn:hover { background: var(--accent-soft); }
 
   /* Listas */
   ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -2602,11 +2601,17 @@
       weekDays.push(d);
     }
 
+    // Agrupar agenda y tareas por día en un solo recorrido cada una, en vez
+    // de filtrar los arreglos completos una vez por cada uno de los 7 días.
+    var agendaByDay = {};
+    state.agenda.forEach(function (e) { (agendaByDay[e.day] || (agendaByDay[e.day] = [])).push(e); });
+    var tasksByDay = {};
+    state.tasks.forEach(function (t) { (tasksByDay[t.day] || (tasksByDay[t.day] = [])).push(t); });
+
     var dayData = weekDays.map(function (d) {
       var iso = isoDate(d);
-      var dayEvents = state.agenda.filter(function (e) { return e.day === iso; })
-        .sort(function (a, b) { return a.time.localeCompare(b.time); });
-      var allTasks = state.tasks.filter(function (t) { return t.day === iso; });
+      var dayEvents = (agendaByDay[iso] || []).slice().sort(function (a, b) { return a.time.localeCompare(b.time); });
+      var allTasks = tasksByDay[iso] || [];
       var openTasks = sortTasksForDisplay(allTasks.filter(function (t) { return t.status !== "completada"; }));
       var dayHabits = state.habits.filter(function (h) { return isHabitScheduled(h, d); });
       return {
@@ -3290,10 +3295,23 @@
     container.appendChild(tile);
   }
 
-  function renderMonthSummary() {
+  // computeDayProgress() escanea tasks/agenda/habits una vez por día; el
+  // resumen y el calendario del mes necesitan ese cálculo para los mismos
+  // ~30 días, así que lo compartimos en un solo mapa en vez de repetirlo.
+  function computeMonthDayProgressMap(cursor) {
+    var map = {};
+    daysOfMonth(cursor).forEach(function (d) {
+      var iso = isoDate(d);
+      map[iso] = computeDayProgress(iso);
+    });
+    return map;
+  }
+
+  function renderMonthSummary(dayProgressMap) {
     var dates = daysOfMonth(monthCursor);
     var prefix = monthPrefix(monthCursor);
     var todayIso = isoDate(new Date());
+    if (!dayProgressMap) dayProgressMap = computeMonthDayProgressMap(monthCursor);
 
     document.getElementById("summaryTitle").textContent =
       capitalize(MONTHS[monthCursor.getMonth()]) + " " + monthCursor.getFullYear();
@@ -3321,7 +3339,7 @@
     dates.forEach(function (d) {
       var iso = isoDate(d);
       if (iso > todayIsoForRate) return;
-      var p = computeDayProgress(iso);
+      var p = dayProgressMap[iso];
       if (p.tasks.total || p.habits.total || p.events.total) completionValues.push(p.pct);
     });
     var monthCompletion = completionValues.length ?
@@ -3390,16 +3408,19 @@
 
   // Calendario mensual real: 42 celdas (Lun-Dom) con indicadores de eventos,
   // tareas y hábitos por día; clic abre ese día en la vista Día.
-  function renderMonthCalendarFull() {
+  function renderMonthCalendarFull(dayProgressMap) {
     var wrap = document.getElementById("monthCalendarGrid");
     if (!wrap) return;
     var todayIso = isoDate(new Date());
     wrap.innerHTML = "";
+    if (!dayProgressMap) dayProgressMap = computeMonthDayProgressMap(monthCursor);
 
     monthMatrix(monthCursor).forEach(function (d) {
       var iso = isoDate(d);
       var outside = d.getMonth() !== monthCursor.getMonth();
-      var p = computeDayProgress(iso);
+      // Los días fuera del mes visible (semanas de relleno) no están en el
+      // mapa compartido; para esos pocos, calculamos aparte.
+      var p = dayProgressMap[iso] || computeDayProgress(iso);
       var hasAny = p.tasks.total || p.habits.total || p.events.total;
 
       var cell = document.createElement("button");
@@ -3430,6 +3451,15 @@
 
       wrap.appendChild(cell);
     });
+  }
+
+  // Vista Mes completa: calcula el progreso diario del mes una sola vez y
+  // lo comparte entre el resumen y el calendario (en vez de que cada uno
+  // vuelva a recorrer tareas/agenda/hábitos por su cuenta).
+  function renderMonthView() {
+    var dayProgressMap = computeMonthDayProgressMap(monthCursor);
+    renderMonthSummary(dayProgressMap);
+    renderMonthCalendarFull(dayProgressMap);
   }
 
   // ---- Future log ("Planificar") ----
@@ -3474,14 +3504,17 @@
     var grid = document.getElementById("futureGrid");
     grid.innerHTML = "";
 
+    // Un solo recorrido de futureLog, agrupado por mes, en vez de filtrar
+    // el arreglo completo una vez por cada una de las 6 tarjetas de mes.
+    var byMonth = {};
+    state.futureLog.forEach(function (it) {
+      if (futureFilterCategory !== "all" && it.category !== futureFilterCategory) return;
+      if (!byMonth[it.month]) byMonth[it.month] = [];
+      byMonth[it.month].push(it);
+    });
     var visibleByMonth = months.map(function (d) {
       var ym = ymKey(d);
-      return {
-        d: d, ym: ym,
-        items: state.futureLog.filter(function (it) {
-          return it.month === ym && (futureFilterCategory === "all" || it.category === futureFilterCategory);
-        })
-      };
+      return { d: d, ym: ym, items: byMonth[ym] || [] };
     });
     var totalVisible = visibleByMonth.reduce(function (n, m) { return n + m.items.length; }, 0);
 
@@ -3724,22 +3757,35 @@
     }
   }
 
+  // Solo una vista está visible a la vez (el resto queda en display:none),
+  // así que renderAll() solo dibuja lo que corresponde a viewMode. Cuando
+  // el usuario cambia de vista, setViewMode() ya llama a renderAll() de
+  // nuevo, así que la vista que se vuelve visible siempre se dibuja con
+  // los datos más recientes — no hace falta mantener las demás al día.
   function renderAll() {
-    renderWeekStrip();
-    renderMonthCalendar();
-    renderWeekPanorama();
-    renderAgenda();
-    renderTop3();
-    renderProgress();
-    renderTasks();
-    renderNotes();
-    renderHabits();
-    renderWeekQuickView();
-    renderMonthSummary();
-    renderMonthCalendarFull();
-    renderFutureLog();
-    renderJournal();
-    renderGoals();
+    if (viewMode === "day") {
+      renderWeekStrip();
+      renderMonthCalendar();
+      renderAgenda();
+      renderTop3();
+      renderProgress();
+      renderTasks();
+      renderNotes();
+      renderHabits();
+      renderWeekQuickView();
+    } else if (viewMode === "week") {
+      renderWeekPanorama();
+      renderNotes();
+      renderHabits();
+    } else if (viewMode === "month") {
+      renderMonthView();
+    } else if (viewMode === "future") {
+      renderFutureLog();
+    } else if (viewMode === "bitacora") {
+      renderJournal();
+    } else if (viewMode === "objetivos") {
+      renderGoals();
+    }
   }
 
   function scrollToCard(selector) {
@@ -3785,13 +3831,16 @@
   // ---- Events ----
 
   function wireEvents() {
+    // prevMonth/nextMonth son del selector de fecha compacto dentro de la
+    // Agenda (vista Día): solo hace falta refrescar ese propio calendario
+    // mini, no el resumen/calendario de la vista Mes (que ni se ve aquí).
     document.getElementById("prevMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1);
-      renderMonthCalendar(); renderMonthSummary(); renderMonthCalendarFull();
+      renderMonthCalendar();
     });
     document.getElementById("nextMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
-      renderMonthCalendar(); renderMonthSummary(); renderMonthCalendarFull();
+      renderMonthCalendar();
     });
     document.getElementById("monthToggleBtn").addEventListener("click", function () {
       monthExpanded = !monthExpanded;
@@ -3804,11 +3853,11 @@
     });
     document.getElementById("prevSummaryMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1);
-      renderMonthSummary(); renderMonthCalendar(); renderMonthCalendarFull();
+      renderMonthView();
     });
     document.getElementById("nextSummaryMonth").addEventListener("click", function () {
       monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1);
-      renderMonthSummary(); renderMonthCalendar(); renderMonthCalendarFull();
+      renderMonthView();
     });
     document.getElementById("summaryTodayBtn").addEventListener("click", function () {
       var today = new Date();
@@ -3905,20 +3954,22 @@
       renderGoals(); scheduleSave();
     });
 
+    // Estos tres botones solo son visibles en la vista Semana: no hace
+    // falta refrescar el calendario mini de la Agenda (vista Día).
     document.getElementById("prevWeekBtn").addEventListener("click", function () {
       var d = parseIso(selectedDate); d.setDate(d.getDate() - 7);
       selectedDate = isoDate(d); monthCursor = startOfMonth(d);
-      renderWeekPanorama(); renderMonthCalendar(); renderHabits();
+      renderWeekPanorama(); renderHabits();
     });
     document.getElementById("nextWeekBtn").addEventListener("click", function () {
       var d = parseIso(selectedDate); d.setDate(d.getDate() + 7);
       selectedDate = isoDate(d); monthCursor = startOfMonth(d);
-      renderWeekPanorama(); renderMonthCalendar(); renderHabits();
+      renderWeekPanorama(); renderHabits();
     });
     document.getElementById("weekTodayBtn").addEventListener("click", function () {
       var today = new Date();
       selectedDate = isoDate(today); monthCursor = startOfMonth(today);
-      renderWeekPanorama(); renderMonthCalendar(); renderHabits();
+      renderWeekPanorama(); renderHabits();
     });
 
     // Agenda: alternar formulario + guardar
