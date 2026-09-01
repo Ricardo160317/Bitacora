@@ -1,0 +1,93 @@
+/* Agenda v10 — readability + balanced responsive layout */
+
+/* The weekly strip duplicated calendar information and consumed valuable space. */
+.week-quickview { display: none !important; }
+
+/* Give the working area more room without making text tiny. */
+.main-content { max-width: 1680px !important; }
+
+/* Readable type scale */
+body { font-size: 16px; }
+.greeting h1 { font-size: clamp(2rem, 1.5rem + 1.25vw, 2.75rem) !important; line-height: 1.08 !important; }
+.greeting-sub { font-size: 1rem !important; }
+.col-head h2 { font-size: 1.3rem !important; line-height: 1.2 !important; }
+.add-toggle-btn, .ghost-btn { font-size: .88rem !important; }
+.month-label { font-size: .9rem !important; }
+.week-strip-day .dow { font-size: .7rem !important; }
+.week-strip-day .num { font-size: .9rem !important; }
+.timeline-time { font-size: .9rem !important; font-weight: 600 !important; }
+.timeline-title, .item-title { font-size: 1rem !important; line-height: 1.38 !important; }
+.timeline-duration, .selected-day-label, .top3-hint, .progress-hint { font-size: .82rem !important; }
+.task-tab { font-size: .82rem !important; }
+.nav-item { font-size: .95rem !important; }
+
+/* Agenda: remove the visual 'ray' effect. Each event owns only the segment to the next event. */
+.timeline-item::after { display: none !important; }
+.timeline-item { position: relative; padding: 12px 0 !important; }
+.timeline-item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 31px;
+  bottom: -12px;
+  width: 1px;
+  background: #d9d3c7;
+}
+.timeline-item:last-child { padding-bottom: 4px !important; }
+
+/* Desktop grid: aligned card edges and useful proportions. */
+@media (min-width: 1181px) {
+  .main-content:has(> .board.view-day) {
+    grid-template-columns: minmax(520px, 1.45fr) minmax(330px, .9fr) minmax(300px, .82fr) !important;
+    grid-template-areas:
+      "topbar topbar topbar"
+      "modes modes modes"
+      "agenda top3 progress"
+      "agenda tasks habits"
+      "agenda tasks notes" !important;
+    gap: 20px !important;
+  }
+  .board.view-day .col-agenda { min-height: 600px !important; height: 100% !important; }
+  .board.view-day .col-top3,
+  .board.view-day .col-progress { min-height: 205px !important; }
+  .board.view-day .col-tasks { min-height: 360px !important; }
+  .main-content:has(> .board.view-day) > .habits-section { min-height: 235px !important; }
+  .board.view-day .col-notes { min-height: 185px !important; }
+}
+
+/* Tablet: true two-column composition, readable controls. */
+@media (max-width: 1180px) and (min-width: 701px) {
+  .main-content { padding: 26px 24px 92px !important; }
+  .board.view-day {
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr) !important;
+    grid-template-areas:
+      "agenda top3"
+      "agenda progress"
+      "tasks tasks"
+      "notes notes" !important;
+    gap: 18px !important;
+  }
+  .board.view-day .col-agenda { min-height: 560px !important; }
+  .habits-section { margin-top: 18px !important; }
+}
+
+/* Phone: content first, no desktop heights, larger tap/text targets. */
+@media (max-width: 700px) {
+  body { font-size: 16px; }
+  .main-content { padding: 18px 14px 100px !important; }
+  .greeting h1 { font-size: 1.85rem !important; }
+  .greeting-sub { font-size: .95rem !important; }
+  .col { padding: 18px !important; border-radius: 16px !important; }
+  .col-head h2 { font-size: 1.22rem !important; }
+  .board.view-day { display: grid !important; grid-template-columns: 1fr !important; grid-template-areas: "agenda" "top3" "progress" "tasks" "notes" !important; }
+  .board.view-day .col-agenda,
+  .board.view-day .col-tasks,
+  .board.view-day .col-top3,
+  .board.view-day .col-progress,
+  .board.view-day .col-notes { min-height: 0 !important; height: auto !important; }
+  .agenda-datepicker { padding: 10px 8px !important; }
+  .week-strip { gap: 3px !important; }
+  .week-strip-day { min-width: 0 !important; }
+  .timeline-title, .item-title { font-size: 1rem !important; }
+  .add-toggle-btn, .ghost-btn { min-height: 36px; }
+}
