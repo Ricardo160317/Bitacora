@@ -34,70 +34,12 @@
 }
 
 /* ======================== DESKTOP ======================== */
+/* The Day-view desktop grid (columns/areas/min-heights) is now owned entirely
+   by agenda-v10.css to avoid two stylesheets fighting over the same grid with
+   !important (that fight is what used to clip the Tareas card and cause a
+   layout jump around 1101-1180px). Keep only non-conflicting helpers here. */
 @media (min-width: 1101px) {
-  .main-content:has(> .board.view-day) {
-    display: grid !important;
-    grid-template-columns: minmax(410px, 1.20fr) minmax(320px, .92fr) minmax(300px, .86fr) !important;
-    grid-template-rows: auto auto 260px 220px auto auto;
-    grid-template-areas:
-      "topbar topbar topbar"
-      "modes modes modes"
-      "agenda top3 progress"
-      "agenda habits notes"
-      "tasks tasks notes"
-      "week week week" !important;
-    column-gap: var(--ra-gap) !important;
-    row-gap: var(--ra-gap) !important;
-    align-items: stretch !important;
-  }
-
-  .main-content:has(> .board.view-day) > .topbar { grid-area: topbar; margin: 0 !important; }
-  .main-content:has(> .board.view-day) > .view-toggle { grid-area: modes; margin: 0 !important; }
-  .main-content:has(> .board.view-day) > .board.view-day { display: contents !important; }
-
-  .main-content:has(> .board.view-day) .col-agenda { grid-area: agenda; }
-  .main-content:has(> .board.view-day) .col-top3 { grid-area: top3; }
-  .main-content:has(> .board.view-day) .col-progress { grid-area: progress; }
-  .main-content:has(> .board.view-day) .col-tasks { grid-area: tasks; }
-  .main-content:has(> .board.view-day) .col-notes { grid-area: notes; }
-  .main-content:has(> .board.view-day) > .habits-section { grid-area: habits; margin: 0 !important; }
-  .main-content:has(> .board.view-day) > .week-quickview { grid-area: week; margin: 0 !important; }
-
-  /* Explicit stretch removes the ragged card bottoms visible in the previous version. */
-  .main-content:has(> .board.view-day) .col-agenda,
-  .main-content:has(> .board.view-day) .col-top3,
-  .main-content:has(> .board.view-day) .col-progress,
-  .main-content:has(> .board.view-day) .col-tasks,
-  .main-content:has(> .board.view-day) .col-notes,
-  .main-content:has(> .board.view-day) > .habits-section {
-    min-height: 0 !important;
-    height: 100% !important;
-    align-self: stretch !important;
-    overflow: hidden;
-  }
-
-  /* Agenda exactly equals Top3 + gap + Habits. */
-  .main-content:has(> .board.view-day) .col-agenda { min-height: 498px !important; }
-
-  /* Progress and Top 3 end on exactly the same horizontal line. */
-  .main-content:has(> .board.view-day) .col-top3,
-  .main-content:has(> .board.view-day) .col-progress { min-height: 260px !important; }
-
-  /* Habits and the upper part of Notes share the same row height. */
-  .main-content:has(> .board.view-day) > .habits-section { min-height: 220px !important; }
-
-  /* Tasks spans the first two columns, matching their combined width exactly. */
-  .main-content:has(> .board.view-day) .col-tasks { min-height: 170px !important; }
-
-  /* Notes spans rows 4+5, so its bottom aligns with Tasks. */
-  .main-content:has(> .board.view-day) .col-notes { min-height: 408px !important; }
-
   .week-quickview { width: 100%; }
-
-  /* Prevent tiny text just to make content fit. Prefer wrapping. */
-  .col, .habits-section { font-size: 14px; }
-  .task-item, .timeline-item, .top3-list > * { min-width: 0; }
-  .task-title, .timeline-title, .habit-label { overflow-wrap: anywhere; }
 }
 
 /* ======================== TABLET ======================== */

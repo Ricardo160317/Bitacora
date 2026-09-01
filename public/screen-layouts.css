@@ -13,7 +13,7 @@
 
   /* BITACORA: editorial 70/30 layout, with clean aligned columns. */
   .main-content:has(#bitacoraSection.journal-premium:not([hidden])){max-width:var(--sl-max)!important;width:100%!important;display:block!important}
-  #bitacoraSection.journal-premium{width:100%!important;display:grid!important;grid-template-columns:minmax(0,2.15fr) minmax(330px,.85fr)!important;gap:var(--sl-gap)!important;align-items:start!important}
+  #bitacoraSection.journal-premium:not([hidden]){width:100%!important;display:grid!important;grid-template-columns:minmax(0,2.15fr) minmax(330px,.85fr)!important;gap:var(--sl-gap)!important;align-items:start!important}
   #bitacoraSection.journal-premium>.col-head,#bitacoraSection.journal-premium>.bitacora-sub{grid-column:1/-1!important}
   #bitacoraSection .journal-editor-card{grid-column:1!important;grid-row:3!important}
   #bitacoraSection .journal-history-card{grid-column:1!important;grid-row:4!important}
@@ -39,7 +39,7 @@
 
 /* Phone: natural vertical flow, no fixed heights, no clipped text. */
 @media (max-width:700px){
-  #bitacoraSection.journal-premium{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;width:100%!important}
+  #bitacoraSection.journal-premium:not([hidden]){display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important;width:100%!important}
   #bitacoraSection.journal-premium>.col-head,#bitacoraSection.journal-premium>.bitacora-sub,#bitacoraSection .journal-editor-card,#bitacoraSection .journal-history-card,#bitacoraSection .journal-side{grid-column:1!important;grid-row:auto!important;width:100%!important;min-width:0!important}
   #bitacoraSection .journal-side{display:grid!important;grid-template-columns:1fr!important;gap:12px!important}
   #bitacoraSection .journal-editor-card,#bitacoraSection .journal-history-card,#bitacoraSection .journal-side-card{padding:16px!important;border-radius:15px!important}

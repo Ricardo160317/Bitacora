@@ -12,8 +12,22 @@ function sums(){var a=monthMoves(),inc=0,exp=0;a.forEach(function(x){if(x.type==
 async function load(){try{var r=await fetch('/api/finance',{credentials:'same-origin'});if(r.ok)F=Object.assign(F,await r.json());}catch(e){console.error('Finanzas:',e);}render();}
 async function save(){try{await fetch('/api/finance',{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(F)});}catch(e){console.error('Finanzas:',e);}}
 function insertNav(){var nav=document.querySelector('.sidebar-nav');if(!nav||document.getElementById('navFinanzas'))return;var b=document.createElement('button');b.id='navFinanzas';b.className='nav-item';b.innerHTML='<span class="nav-icon">▣</span><span class="nav-label">Finanzas</span>';var settings=Array.from(nav.children).find(function(x){return /Ajustes/i.test(x.textContent);});nav.insertBefore(b,settings||null);b.addEventListener('click',open);}
-function open(){var main=document.querySelector('.main-content');if(!main)return;Array.from(main.children).forEach(function(x){if(x.id!=='financeView')x.classList.add('finance-hidden');});document.querySelectorAll('.nav-item').forEach(function(x){x.classList.remove('is-active');});document.getElementById('navFinanzas').classList.add('is-active');document.getElementById('financeView').classList.add('is-open');load();}
-function closeFinance(){var v=document.getElementById('financeView');if(v)v.classList.remove('is-open');document.querySelectorAll('.main-content>.finance-hidden').forEach(function(x){x.classList.remove('finance-hidden');});}
+function open(){var main=document.querySelector('.main-content');if(!main)return;
+  // El tablero del día usa "display:contents" mientras tiene la clase view-day para
+  // que sus tarjetas actúen como celdas directas del grid de main-content. Ocultarlo
+  // solo con una clase (display:none) pierde ese pulso de especificidad y el tablero
+  // se sigue viendo debajo de Finanzas. Quitamos view-day/view-week para desactivar
+  // esa regla y los restauramos al cerrar.
+  var board=document.getElementById('board');
+  if(board){board.dataset.financeSavedView=board.classList.contains('view-day')?'view-day':(board.classList.contains('view-week')?'view-week':'');board.classList.remove('view-day','view-week');board.hidden=true;}
+  Array.from(main.children).forEach(function(x){if(x.id!=='financeView'){x.hidden=true;x.classList.add('finance-hidden');}});
+  document.querySelectorAll('.nav-item').forEach(function(x){x.classList.remove('is-active');});document.getElementById('navFinanzas').classList.add('is-active');document.getElementById('financeView').classList.add('is-open');load();}
+function closeFinance(){var v=document.getElementById('financeView');if(v)v.classList.remove('is-open');
+  document.querySelectorAll('.main-content>.finance-hidden').forEach(function(x){x.classList.remove('finance-hidden');});
+  var navBtn=document.getElementById('navFinanzas');if(navBtn)navBtn.classList.remove('is-active');
+  var board=document.getElementById('board');
+  if(board&&board.dataset.financeSavedView){board.classList.add(board.dataset.financeSavedView);delete board.dataset.financeSavedView;board.hidden=false;}
+}
 function build(){var main=document.querySelector('.main-content');if(!main||document.getElementById('financeView'))return;var v=document.createElement('section');v.id='financeView';v.className='finance-view';v.innerHTML='<div class="finance-head"><div class="finance-title"><span class="finance-title-icon">▣</span><div><h1>Finanzas</h1><p>Controla tus ingresos, gastos y alcanza tus metas.</p></div></div><input id="financeMonth" class="finance-month" type="month"></div><div class="finance-tabs">'+['resumen','movimientos','presupuesto','metas','reportes','tarjetas','recurrentes'].map(function(t){return '<button class="finance-tab" data-tab="'+t+'">'+t.charAt(0).toUpperCase()+t.slice(1)+'</button>';}).join('')+'</div><div id="financeBody"></div>';main.appendChild(v);document.getElementById('financeMonth').value=new Date().toISOString().slice(0,7);v.querySelector('.finance-tabs').onclick=function(e){var b=e.target.closest('[data-tab]');if(!b)return;currentTab=b.dataset.tab;render();};document.getElementById('financeMonth').onchange=render;
 // cualquier otra navegación devuelve la app normal
  document.querySelectorAll('.sidebar-nav .nav-item:not(#navFinanzas)').forEach(function(b){b.addEventListener('click',closeFinance);});

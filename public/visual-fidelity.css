@@ -144,43 +144,14 @@ body {
 }
 .add-toggle-btn:hover { background: #e2e8dc; }
 
-/* DAY — compose the page as one intentional dashboard, including siblings
-   that previously lived outside the .board element. */
+/* DAY — the grid geometry (columns/areas/min-heights) for the desktop Day
+   view now lives solely in agenda-v10.css, loaded after this file, so it's
+   the single source of truth and doesn't fight this stylesheet over the same
+   !important properties. Keep just the alignment default this design relies
+   on: main-content becomes the grid (via display:contents on .board.view-day)
+   and its items should size to content, not stretch to fill their row. */
 @media (min-width: 1101px) {
-  .main-content:has(> .board.view-day) {
-    display: grid;
-    grid-template-columns: minmax(440px, 1.28fr) minmax(300px, .9fr) minmax(265px, .72fr);
-    grid-template-areas:
-      "topbar topbar topbar"
-      "modes modes modes"
-      "agenda top3 progress"
-      "agenda tasks habits"
-      "agenda tasks notes"
-      "week week week";
-    gap: 18px;
-    align-items: start;
-  }
-  .main-content:has(> .board.view-day) > .topbar { grid-area: topbar; margin-bottom: 0; }
-  .main-content:has(> .board.view-day) > .view-toggle { grid-area: modes; margin-bottom: 2px; }
-  .main-content:has(> .board.view-day) > .board.view-day { display: contents; }
-  .main-content:has(> .board.view-day) .col-agenda { grid-area: agenda; }
-  .main-content:has(> .board.view-day) .col-top3 { grid-area: top3; }
-  .main-content:has(> .board.view-day) .col-progress { grid-area: progress; }
-  .main-content:has(> .board.view-day) .col-tasks { grid-area: tasks; }
-  .main-content:has(> .board.view-day) .col-notes { grid-area: notes; }
-  .main-content:has(> .board.view-day) > .habits-section { grid-area: habits; margin: 0; }
-  .main-content:has(> .board.view-day) > .week-quickview { grid-area: week; margin: 0; }
-  .main-content:has(> .board.view-day) > .month-summary-section,
-  .main-content:has(> .board.view-day) > .future-log-section,
-  .main-content:has(> .board.view-day) > .bitacora-section,
-  .main-content:has(> .board.view-day) > .objetivos-section { grid-column: 1 / -1; }
-
-  .board.view-day .col-agenda { min-height: 720px; }
-  .board.view-day .col-tasks { min-height: 390px; }
-  .board.view-day .col-top3,
-  .board.view-day .col-progress,
-  .board.view-day .col-notes,
-  .main-content:has(> .board.view-day) > .habits-section { min-height: 0; }
+  .main-content:has(> .board.view-day) { align-items: start; }
 }
 
 /* Agenda is the visual anchor */
@@ -347,12 +318,26 @@ body {
 @media (max-width: 700px) {
   .main-content { padding: 20px 14px 104px; }
   .sidebar {
+    /* The unconditioned ".sidebar{width:220px}" rule above this file's tablet
+       block otherwise wins on phones too (nothing after it in the cascade
+       resets it for mobile), turning the full-width bottom tab bar into a
+       220px box that clips Hábitos/Objetivos/Finanzas/Ajustes off-screen. */
+    width: 100% !important;
     background: #40553b;
     border-top: 0;
     box-shadow: 0 -8px 22px rgba(40,50,37,.12);
   }
   .nav-item { color: rgba(255,255,255,.7); }
   .nav-item.is-active { background: rgba(255,255,255,.13); color: white; box-shadow: none; }
+  /* 7 nav items (Hoy/Calendario/Bitácora/Hábitos/Objetivos/Finanzas/Ajustes)
+     don't all fit a narrow phone at once; let the bar scroll horizontally
+     instead of silently clipping Finanzas/Ajustes off the right edge. */
+  .sidebar-nav { overflow-x: auto; overflow-y: hidden; justify-content: flex-start !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .sidebar-nav::-webkit-scrollbar { display: none; }
+  /* .nav-item has width:100% for the vertical desktop list; with flex-basis:auto
+     that would make each item claim the full row width here, so it needs an
+     explicit width for this horizontal, scrollable context. */
+  .nav-item { flex: none; width: auto; min-width: 58px; }
   .view-toggle { overflow-x: auto; gap: 18px; }
   .view-toggle button { flex: none; }
   .col, .week-quickview { border-radius: 17px; }

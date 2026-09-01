@@ -9,7 +9,13 @@
     var settingsBtn = document.getElementById('navAjustes');
     var normalNav = ['navHoy','navCalendario','navBitacora','navObjetivos'];
 
-    function clearHabitsFocus() { document.body.classList.remove('habits-focus'); }
+    function clearHabitsFocus() {
+      document.body.classList.remove('habits-focus');
+      // setViewMode() only manages is-active for its own 4 nav items, so the
+      // Hábitos button (which bypasses setViewMode) has to be cleared here or
+      // it stays highlighted after navigating elsewhere.
+      if (habitsBtn) habitsBtn.classList.remove('is-active');
+    }
     normalNav.forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('click', clearHabitsFocus); });
     var toggles = document.getElementById('viewToggle');
     if (toggles) toggles.addEventListener('click', clearHabitsFocus);
@@ -19,6 +25,16 @@
         document.body.classList.add('habits-focus');
         document.querySelectorAll('.sidebar-nav .nav-item').forEach(function(b){ b.classList.remove('is-active'); });
         habitsBtn.classList.add('is-active');
+        // El botón de Hábitos no pasa por setViewMode(), así que debe ocultar a mano
+        // las demás secciones (si no, se quedan visibles debajo del panel de hábitos).
+        var board = document.getElementById('board');
+        if (board) { board.classList.remove('view-day', 'view-week'); board.hidden = true; }
+        var habitsSection = document.getElementById('habitsSection');
+        if (habitsSection) habitsSection.hidden = false;
+        ['weekQuickView', 'bitacoraSection', 'objetivosSection', 'monthSummarySection', 'futureLogSection'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.hidden = true;
+        });
         requestAnimationFrame(function(){
           var section=document.getElementById('habitsSection');
           if(section) section.scrollIntoView({behavior:'smooth',block:'start'});

@@ -35,28 +35,47 @@ body { font-size: 16px; }
 }
 .timeline-item:last-child { padding-bottom: 4px !important; }
 
-/* Desktop grid: aligned card edges and useful proportions. */
-@media (min-width: 1181px) {
+/* Desktop grid: aligned card edges and useful proportions.
+   Breakpoint matches the sidebar/tablet cutoff (1101px, used everywhere else
+   in the app) so the layout doesn't jump between two different desktop grids
+   in the 1101-1180px range. Tasks spans the top3+progress columns (instead of
+   sitting in a single narrow column) so its checkbox/priority-tag/actions row
+   has room to breathe down to 1101px, instead of wrapping one letter per line. */
+@media (min-width: 1101px) {
   .main-content:has(> .board.view-day) {
-    grid-template-columns: minmax(520px, 1.45fr) minmax(330px, .9fr) minmax(300px, .82fr) !important;
+    display: grid !important;
+    grid-template-columns: minmax(330px, 1.45fr) minmax(210px, .9fr) minmax(190px, .82fr) !important;
     grid-template-areas:
       "topbar topbar topbar"
       "modes modes modes"
       "agenda top3 progress"
-      "agenda tasks habits"
-      "agenda tasks notes" !important;
+      "agenda tasks tasks"
+      "agenda habits notes" !important;
     gap: 20px !important;
+    align-items: start !important;
   }
+  /* main-content becomes the real grid; the board itself contributes no box of
+     its own so its cards act as direct grid items (and lay out via the areas
+     above instead of the plain 3-col grid .board.view-day gets by default). */
+  .main-content:has(> .board.view-day) > .board.view-day { display: contents !important; }
+  .main-content:has(> .board.view-day) > .topbar { grid-area: topbar; margin-bottom: 0 !important; }
+  .main-content:has(> .board.view-day) > .view-toggle { grid-area: modes; margin-bottom: 0 !important; }
+  .main-content:has(> .board.view-day) .col-agenda { grid-area: agenda; }
+  .main-content:has(> .board.view-day) .col-top3 { grid-area: top3; }
+  .main-content:has(> .board.view-day) .col-progress { grid-area: progress; }
+  .main-content:has(> .board.view-day) .col-tasks { grid-area: tasks; }
+  .main-content:has(> .board.view-day) .col-notes { grid-area: notes; }
+  .main-content:has(> .board.view-day) > .habits-section { grid-area: habits; margin: 0 !important; }
   .board.view-day .col-agenda { min-height: 600px !important; height: 100% !important; }
   .board.view-day .col-top3,
   .board.view-day .col-progress { min-height: 205px !important; }
-  .board.view-day .col-tasks { min-height: 360px !important; }
-  .main-content:has(> .board.view-day) > .habits-section { min-height: 235px !important; }
-  .board.view-day .col-notes { min-height: 185px !important; }
+  .board.view-day .col-tasks { min-height: 240px !important; }
+  .main-content:has(> .board.view-day) > .habits-section,
+  .board.view-day .col-notes { min-height: 205px !important; }
 }
 
 /* Tablet: true two-column composition, readable controls. */
-@media (max-width: 1180px) and (min-width: 701px) {
+@media (max-width: 1100px) and (min-width: 701px) {
   .main-content { padding: 26px 24px 92px !important; }
   .board.view-day {
     grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr) !important;
