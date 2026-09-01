@@ -11,25 +11,14 @@
 <script>
 (function () {
   fetch('app-shell.html', { cache: 'no-store', credentials: 'same-origin' })
-    .then(function (res) {
-      if (!res.ok) throw new Error('No se pudo cargar la aplicación');
-      return res.text();
-    })
+    .then(function (res) { if (!res.ok) throw new Error('No se pudo cargar la aplicación'); return res.text(); })
     .then(function (html) {
-      var fidelityLink = '<link rel="stylesheet" href="visual-fidelity.css?v=10">';
-      var alignmentLink = '<link rel="stylesheet" href="responsive-alignment.css?v=2">';
-      var agendaLink = '<link rel="stylesheet" href="agenda-v10.css?v=10">';
-      var enhancementsLink = '<link rel="stylesheet" href="navigation-enhancements.css?v=1">';
-      var enhancementsScript = '<script src="navigation-enhancements.js?v=1" defer><\/script>';
-      html = html.replace('</head>', fidelityLink + '\n' + alignmentLink + '\n' + agendaLink + '\n' + enhancementsLink + '\n' + enhancementsScript + '\n</head>');
-      document.open();
-      document.write(html);
-      document.close();
+      var styles = '<link rel="stylesheet" href="visual-fidelity.css?v=10">\n<link rel="stylesheet" href="responsive-alignment.css?v=2">\n<link rel="stylesheet" href="agenda-v10.css?v=10">\n<link rel="stylesheet" href="navigation-enhancements.css?v=1">\n<link rel="stylesheet" href="finance.css?v=1">';
+      var scripts = '<script src="navigation-enhancements.js?v=1" defer><\/script>\n<script src="finance.js?v=1" defer><\/script>';
+      html = html.replace('</head>', styles + '\n' + scripts + '\n</head>');
+      document.open(); document.write(html); document.close();
     })
-    .catch(function (err) {
-      document.body.innerHTML = '<div class="boot">No se pudo cargar la Bitácora. Recarga la página.</div>';
-      console.error(err);
-    });
+    .catch(function (err) { document.body.innerHTML = '<div class="boot">No se pudo cargar la Bitácora. Recarga la página.</div>'; console.error(err); });
 })();
 </script>
 </body>
