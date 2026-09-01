@@ -19,7 +19,9 @@
       var fidelityLink = '<link rel="stylesheet" href="visual-fidelity.css?v=10">';
       var alignmentLink = '<link rel="stylesheet" href="responsive-alignment.css?v=2">';
       var agendaLink = '<link rel="stylesheet" href="agenda-v10.css?v=10">';
-      html = html.replace('</head>', fidelityLink + '\n' + alignmentLink + '\n' + agendaLink + '\n</head>');
+      var enhancementsLink = '<link rel="stylesheet" href="navigation-enhancements.css?v=1">';
+      var enhancementsScript = '<script src="navigation-enhancements.js?v=1" defer><\/script>';
+      html = html.replace('</head>', fidelityLink + '\n' + alignmentLink + '\n' + agendaLink + '\n' + enhancementsLink + '\n' + enhancementsScript + '\n</head>');
       document.open();
       document.write(html);
       document.close();
