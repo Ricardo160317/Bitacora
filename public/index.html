@@ -197,6 +197,16 @@
   }
   .greeting-sub { margin: 0; color: var(--muted); font-size: 0.92rem; }
 
+  .stale-banner {
+    margin: -6px 0 14px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: var(--amber-soft);
+    color: var(--amber);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
   .topbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
   .date-pill {
@@ -975,8 +985,9 @@
 
   .task-item.is-done .item-title { text-decoration: line-through; color: var(--muted); }
   .task-item.is-progress .item-title { color: var(--amber); }
+  .task-item.is-delegated .item-title { color: var(--violet); }
 
-  .progress-toggle-btn {
+  .progress-toggle-btn, .delegate-toggle-btn {
     flex: none;
     border: 1px solid var(--border);
     background: var(--bg);
@@ -991,8 +1002,23 @@
     margin-top: 1px;
   }
   .progress-toggle-btn.is-active { background: var(--amber-soft); color: var(--amber); border-color: var(--amber); }
+  .delegate-toggle-btn.is-active { background: var(--violet-soft); color: var(--violet); border-color: var(--violet); }
 
   .item-title { flex: 1; font-size: 0.92rem; line-height: 1.35; word-break: break-word; }
+
+  .delegate-tag {
+    flex: none;
+    font-size: 0.7rem;
+    color: var(--violet);
+    background: var(--violet-soft);
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-top: 1px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   .icon-btn {
     flex: none;
@@ -1023,6 +1049,21 @@
   .priority-tag[data-p="alta"] { background: var(--danger-soft); color: var(--danger); }
   .priority-tag[data-p="media"] { background: var(--amber-soft); color: var(--amber); }
   .priority-tag[data-p="baja"] { background: var(--accent-soft); color: var(--accent-ink); }
+
+  .area-tag {
+    flex: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-top: 1px;
+    white-space: nowrap;
+  }
+  .area-tag[data-a="operacion"] { background: var(--accent-soft); color: var(--accent-ink); }
+  .area-tag[data-a="mantenimiento"] { background: var(--amber-soft); color: var(--amber); }
+  .area-tag[data-a="calidad"] { background: var(--blue-soft); color: var(--blue); }
+  .area-tag[data-a="personas"] { background: var(--violet-soft); color: var(--violet); }
+  .area-tag[data-a="administracion"] { background: var(--danger-soft); color: var(--danger); }
 
   .task-time-slot { display: contents; }
 
@@ -2014,6 +2055,8 @@
       </div>
     </header>
 
+    <p class="stale-banner" id="staleBanner" hidden></p>
+
     <nav class="view-toggle" id="viewToggle">
       <button type="button" class="is-active" id="viewDayBtn">Día</button>
       <button type="button" id="viewWeekBtn">Semana</button>
@@ -2071,6 +2114,7 @@
             <option value="90">1 h 30 min</option>
             <option value="120">2 h</option>
           </select>
+          <div class="area-picker cat-picker" id="agendaAreaPicker"></div>
           <button type="submit">Agregar</button>
         </form>
       </section>
@@ -2100,7 +2144,11 @@
         <div class="task-tabs" id="taskTabs">
           <button type="button" class="task-tab is-active" data-status="pendiente">Pendientes <span class="tab-count" id="tabCountPendiente"></span></button>
           <button type="button" class="task-tab" data-status="progreso">En progreso <span class="tab-count" id="tabCountProgreso"></span></button>
+          <button type="button" class="task-tab" data-status="delegada">Delegadas <span class="tab-count" id="tabCountDelegada"></span></button>
           <button type="button" class="task-tab" data-status="completada">Completadas <span class="tab-count" id="tabCountCompletada"></span></button>
+        </div>
+        <div class="future-filter-chips" id="taskAreaFilterChips">
+          <button type="button" class="future-filter-chip is-active" data-area="all">Todas las áreas</button>
         </div>
         <form class="add-form task-form" id="taskForm" hidden>
           <input type="time" id="taskTime" title="Hora (opcional)">
@@ -2110,6 +2158,7 @@
             <button type="button" class="p-chip is-active" data-p="media">Media</button>
             <button type="button" class="p-chip" data-p="baja">Baja</button>
           </div>
+          <div class="area-picker cat-picker" id="taskAreaPicker"></div>
           <button type="submit">Agregar</button>
         </form>
         <ul class="task-list" id="taskList"></ul>
@@ -2315,6 +2364,16 @@
     idea: { label: "Idea", icon: "💡" },
     proyecto: { label: "Proyecto", icon: "📁" }
   };
+  // Áreas operativas para etiquetar tareas y agenda. "" = sin área.
+  var AREAS = {
+    "": { label: "Sin área", icon: "○" },
+    operacion: { label: "Operación", icon: "⚙" },
+    mantenimiento: { label: "Mantenimiento", icon: "🛠" },
+    calidad: { label: "Calidad", icon: "✔" },
+    personas: { label: "Personas", icon: "👥" },
+    administracion: { label: "Administración", icon: "📋" }
+  };
+  var STALE_DAYS = 7;
   var GOAL_PERIODS = {
     semana: "Esta semana",
     mes: "Este mes",
@@ -2336,6 +2395,7 @@
   var editingTaskTimeId = null;
   var editingAgendaId = null;
   var taskFilterStatus = "pendiente";
+  var taskFilterArea = "all";
   var futureFilterCategory = "all";
   var goalFilterStatus = "activos";
   var pendingMilestoneFocusGoalId = null;
@@ -2405,6 +2465,33 @@
     return h + " h" + (m ? " " + m + " min" : "");
   }
 
+  function buildAreaChipsHTML(activeArea) {
+    return Object.keys(AREAS).map(function (key) {
+      var a = AREAS[key];
+      return '<button type="button" class="cat-chip' + (key === activeArea ? " is-active" : "") +
+        '" data-area="' + key + '" title="' + a.label + '">' + a.icon + "</button>";
+    }).join("");
+  }
+
+  // Pendientes/en progreso/delegadas que llevan más de STALE_DAYS días
+  // abiertas: la señal de que la carga se está acumulando sin que se note.
+  function computeStaleTasks() {
+    var cutoff = Date.now() - STALE_DAYS * 24 * 60 * 60 * 1000;
+    return state.tasks.filter(function (t) {
+      return t.status !== "completada" && t.createdAt && t.createdAt < cutoff;
+    });
+  }
+
+  function renderStaleBanner() {
+    var banner = document.getElementById("staleBanner");
+    var stale = computeStaleTasks();
+    if (!stale.length) { banner.hidden = true; return; }
+    banner.hidden = false;
+    banner.textContent = "⚠ Llevas " + stale.length +
+      (stale.length === 1 ? " pendiente atascado" : " pendientes atascados") +
+      " hace más de " + STALE_DAYS + " días.";
+  }
+
   function applyState(parsed) {
     state = {
       tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
@@ -2421,8 +2508,16 @@
     state.tasks.forEach(function (t) {
       if (!t.status) t.status = t.done ? "completada" : "pendiente";
       t.done = t.status === "completada";
+      if (!AREAS[t.area]) t.area = "";
+      // Tareas cargadas antes de tener createdAt no tienen forma de saber su
+      // antigüedad real: se les da la fecha de hoy para que no se marquen
+      // como atascadas de golpe con datos que no la registraron.
+      if (!t.createdAt) t.createdAt = Date.now();
     });
-    state.agenda.forEach(function (e) { if (typeof e.done !== "boolean") e.done = false; });
+    state.agenda.forEach(function (e) {
+      if (typeof e.done !== "boolean") e.done = false;
+      if (!AREAS[e.area]) e.area = "";
+    });
     state.futureLog.forEach(function (it) { if (!FUTURE_CATEGORIES[it.category]) it.category = "idea"; });
     state.goals.forEach(function (g) {
       if (!Array.isArray(g.milestones)) g.milestones = [];
@@ -2769,6 +2864,15 @@
           durSelect.appendChild(o);
         });
 
+        var areaSelect = document.createElement("select");
+        areaSelect.className = "timeline-edit-duration";
+        Object.keys(AREAS).forEach(function (key) {
+          var o = document.createElement("option");
+          o.value = key; o.textContent = AREAS[key].icon + " " + AREAS[key].label;
+          if ((ev.area || "") === key) o.selected = true;
+          areaSelect.appendChild(o);
+        });
+
         var saveBtn = document.createElement("button");
         saveBtn.type = "button"; saveBtn.className = "icon-btn"; saveBtn.textContent = "✓";
         saveBtn.setAttribute("aria-label", "Guardar cambios");
@@ -2780,6 +2884,7 @@
         editWrap.appendChild(timeInput);
         editWrap.appendChild(titleInput);
         editWrap.appendChild(durSelect);
+        editWrap.appendChild(areaSelect);
         editWrap.appendChild(saveBtn);
         editWrap.appendChild(cancelBtn);
 
@@ -2788,6 +2893,7 @@
           if (newTitle) ev.title = newTitle;
           ev.time = timeInput.value || ev.time;
           ev.duration = durSelect.value ? Number(durSelect.value) : undefined;
+          ev.area = areaSelect.value;
           editingAgendaId = null;
           renderAll(); scheduleSave();
         });
@@ -2802,6 +2908,7 @@
           '<span class="timeline-body">' +
             '<span class="timeline-time"></span>' +
             '<span class="timeline-title"></span>' +
+            (ev.area ? '<span class="area-tag" data-a="' + ev.area + '">' + AREAS[ev.area].icon + ' ' + AREAS[ev.area].label + '</span>' : '') +
             '<span class="timeline-duration"></span>' +
           "</span>" +
           '<span class="timeline-actions">' +
@@ -2985,6 +3092,7 @@
   function emptyTaskMessage(status) {
     if (status === "completada") return "Aún no completas tareas hoy.";
     if (status === "progreso") return "Nada en progreso todavía.";
+    if (status === "delegada") return "No tienes tareas delegadas.";
     return "Sin tareas pendientes. Las que no termines pasan solas al día siguiente.";
   }
 
@@ -2995,13 +3103,16 @@
     label.textContent = selectedDate === todayIso ? "Hoy" : formatLongDate(selectedDate);
 
     var dayTasks = state.tasks.filter(function (t) { return t.day === selectedDate; });
-    var counts = { pendiente: 0, progreso: 0, completada: 0 };
-    dayTasks.forEach(function (t) { counts[t.status] = (counts[t.status] || 0) + 1; });
+    var areaTasks = taskFilterArea === "all" ? dayTasks :
+      dayTasks.filter(function (t) { return (t.area || "") === taskFilterArea; });
+    var counts = { pendiente: 0, progreso: 0, delegada: 0, completada: 0 };
+    areaTasks.forEach(function (t) { counts[t.status] = (counts[t.status] || 0) + 1; });
     document.getElementById("tabCountPendiente").textContent = counts.pendiente;
     document.getElementById("tabCountProgreso").textContent = counts.progreso;
+    document.getElementById("tabCountDelegada").textContent = counts.delegada;
     document.getElementById("tabCountCompletada").textContent = counts.completada;
 
-    var visible = sortTasksForDisplay(dayTasks.filter(function (t) { return t.status === taskFilterStatus; }));
+    var visible = sortTasksForDisplay(areaTasks.filter(function (t) { return t.status === taskFilterStatus; }));
     list.innerHTML = "";
     if (!visible.length) {
       list.innerHTML = '<li class="empty-state">' + emptyTaskMessage(taskFilterStatus) + "</li>";
@@ -3010,14 +3121,22 @@
         var li = document.createElement("li");
         li.className = "task-item" +
           (t.status === "completada" ? " is-done" : "") +
-          (t.status === "progreso" ? " is-progress" : "");
+          (t.status === "progreso" ? " is-progress" : "") +
+          (t.status === "delegada" ? " is-delegated" : "");
+        var area = AREAS[t.area || ""];
         li.innerHTML = '<input type="checkbox">' +
           '<span class="task-time-slot"></span>' +
           '<span class="priority-tag" data-p="' + t.priority + '">' + t.priority + '</span>' +
+          (t.area ? '<span class="area-tag" data-a="' + t.area + '">' + area.icon + ' ' + area.label + '</span>' : '') +
           '<span class="item-title"></span>' +
-          '<button type="button" class="progress-toggle-btn">▶</button>' +
+          (t.status === "delegada" ? '<span class="delegate-tag"></span>' : '') +
+          '<button type="button" class="progress-toggle-btn" title="Marcar en progreso">▶</button>' +
+          '<button type="button" class="delegate-toggle-btn" title="Delegar">👤</button>' +
           '<button class="icon-btn" type="button">✕</button>';
         li.querySelector(".item-title").textContent = t.text;
+        if (t.status === "delegada") {
+          li.querySelector(".delegate-tag").textContent = "→ " + (t.delegatedTo || "delegada");
+        }
 
         var cb = li.querySelector('input[type="checkbox"]');
         cb.checked = t.status === "completada";
@@ -3030,9 +3149,25 @@
         var progBtn = li.querySelector(".progress-toggle-btn");
         progBtn.setAttribute("aria-label", "Marcar en progreso: " + t.text);
         if (t.status === "progreso") progBtn.classList.add("is-active");
-        if (t.status === "completada") progBtn.hidden = true;
+        if (t.status === "completada" || t.status === "delegada") progBtn.hidden = true;
         progBtn.addEventListener("click", function () {
           setTaskStatus(t, t.status === "progreso" ? "pendiente" : "progreso");
+          renderAll(); scheduleSave();
+        });
+
+        var delegateBtn = li.querySelector(".delegate-toggle-btn");
+        delegateBtn.setAttribute("aria-label", "Delegar tarea: " + t.text);
+        if (t.status === "delegada") delegateBtn.classList.add("is-active");
+        if (t.status === "completada") delegateBtn.hidden = true;
+        delegateBtn.addEventListener("click", function () {
+          if (t.status === "delegada") {
+            setTaskStatus(t, "pendiente");
+          } else {
+            var name = window.prompt("¿A quién se la delegaste?", t.delegatedTo || "");
+            if (name === null) return;
+            t.delegatedTo = name.trim();
+            setTaskStatus(t, "delegada");
+          }
           renderAll(); scheduleSave();
         });
 
@@ -3765,6 +3900,7 @@
   // nuevo, así que la vista que se vuelve visible siempre se dibuja con
   // los datos más recientes — no hace falta mantener las demás al día.
   function renderAll() {
+    renderStaleBanner();
     if (viewMode === "day") {
       renderWeekStrip();
       renderMonthCalendar();
@@ -3980,6 +4116,18 @@
       form.hidden = !form.hidden;
       if (!form.hidden) document.getElementById("agendaTitle").focus();
     });
+
+    var activeAgendaArea = "";
+    document.getElementById("agendaAreaPicker").innerHTML = buildAreaChipsHTML(activeAgendaArea);
+    document.getElementById("agendaAreaPicker").addEventListener("click", function (e) {
+      var btn = e.target.closest(".cat-chip");
+      if (!btn) return;
+      activeAgendaArea = btn.getAttribute("data-area");
+      Array.prototype.forEach.call(document.querySelectorAll("#agendaAreaPicker .cat-chip"), function (b) {
+        b.classList.toggle("is-active", b === btn);
+      });
+    });
+
     document.getElementById("agendaForm").addEventListener("submit", function (e) {
       e.preventDefault();
       var time = document.getElementById("agendaTime").value || "09:00";
@@ -3988,7 +4136,7 @@
       var durVal = document.getElementById("agendaDuration").value;
       state.agenda.push({
         id: newId(), day: selectedDate, time: time, title: title,
-        duration: durVal ? Number(durVal) : undefined, done: false
+        duration: durVal ? Number(durVal) : undefined, done: false, area: activeAgendaArea
       });
       document.getElementById("agendaTitle").value = "";
       document.getElementById("agendaForm").hidden = true;
@@ -4011,6 +4159,22 @@
       if (!form.hidden) document.getElementById("taskText").focus();
     });
 
+    // Filtro de áreas: agrega un chip "Todas" + uno por área, y filtra la lista al hacer click
+    Object.keys(AREAS).forEach(function (key) {
+      var a = AREAS[key];
+      document.getElementById("taskAreaFilterChips").insertAdjacentHTML("beforeend",
+        '<button type="button" class="future-filter-chip" data-area="' + key + '">' + a.icon + " " + a.label + "</button>");
+    });
+    document.getElementById("taskAreaFilterChips").addEventListener("click", function (e) {
+      var btn = e.target.closest(".future-filter-chip");
+      if (!btn) return;
+      taskFilterArea = btn.getAttribute("data-area");
+      Array.prototype.forEach.call(document.querySelectorAll("#taskAreaFilterChips .future-filter-chip"), function (b) {
+        b.classList.toggle("is-active", b === btn);
+      });
+      renderTasks();
+    });
+
     var activePriority = "media";
     document.getElementById("priorityPicker").addEventListener("click", function (e) {
       var btn = e.target.closest(".p-chip");
@@ -4021,12 +4185,26 @@
       });
     });
 
+    var activeTaskArea = "";
+    document.getElementById("taskAreaPicker").innerHTML = buildAreaChipsHTML(activeTaskArea);
+    document.getElementById("taskAreaPicker").addEventListener("click", function (e) {
+      var btn = e.target.closest(".cat-chip");
+      if (!btn) return;
+      activeTaskArea = btn.getAttribute("data-area");
+      Array.prototype.forEach.call(document.querySelectorAll("#taskAreaPicker .cat-chip"), function (b) {
+        b.classList.toggle("is-active", b === btn);
+      });
+    });
+
     document.getElementById("taskForm").addEventListener("submit", function (e) {
       e.preventDefault();
       var text = document.getElementById("taskText").value.trim();
       if (!text) return;
       var time = document.getElementById("taskTime").value || "";
-      state.tasks.push({ id: newId(), text: text, done: false, status: "pendiente", priority: activePriority, day: selectedDate, time: time });
+      state.tasks.push({
+        id: newId(), text: text, done: false, status: "pendiente", priority: activePriority,
+        area: activeTaskArea, day: selectedDate, time: time, createdAt: Date.now()
+      });
       document.getElementById("taskText").value = "";
       document.getElementById("taskTime").value = "";
       document.getElementById("taskForm").hidden = true;
