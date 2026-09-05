@@ -1251,6 +1251,47 @@
     border: 1px solid var(--border);
   }
 
+  /* Notes: photo tab */
+  .photo-panel { display: flex; flex-direction: column; gap: 8px; }
+  .photo-drop {
+    border: 1.5px dashed var(--border);
+    border-radius: 9px;
+    background: var(--bg);
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .photo-drop:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .photo-drop.has-image { padding: 6px; }
+  #photoPreview { max-width: 100%; max-height: 220px; border-radius: 7px; display: block; }
+  .photo-ocr-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .photo-ocr-status { font-size: 0.76rem; color: var(--muted); }
+  .photo-actions { display: flex; justify-content: flex-end; gap: 6px; }
+  .photo-actions button {
+    border: none;
+    border-radius: 9px;
+    padding: 8px 14px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  #photoSave { background: var(--accent); color: var(--accent-ink); }
+  #photoSave:hover { filter: brightness(1.06); }
+  #photoSave:disabled { opacity: 0.5; cursor: not-allowed; }
+  .note-item .note-photo {
+    max-width: 100%;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+
   /* Habit tracker */
   .habits-section { margin-bottom: 18px; }
 
@@ -2169,9 +2210,10 @@
         <div class="note-tabs">
           <button type="button" class="note-tab is-active" id="tabWrite">Escribir</button>
           <button type="button" class="note-tab" id="tabDraw">A mano</button>
+          <button type="button" class="note-tab" id="tabPhoto">Foto</button>
         </div>
         <form class="add-form" id="noteForm">
-          <textarea id="noteText" placeholder="Escribe algo rápido…" required maxlength="600"></textarea>
+          <textarea id="noteText" placeholder="Escribe algo rápido… (o pega texto con Ctrl+V)" required maxlength="600"></textarea>
           <button type="submit">Guardar nota</button>
         </form>
         <div class="draw-pad" id="drawPad" hidden>
@@ -2183,6 +2225,22 @@
             <button type="button" class="ghost-btn" id="drawClear">Borrar</button>
             <button type="button" class="ghost-btn" id="drawSave">Guardar nota</button>
           </span>
+        </div>
+        <div class="photo-panel" id="photoPanel" hidden>
+          <input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
+          <div class="photo-drop" id="photoDrop" tabindex="0" role="button">
+            <span id="photoDropLabel">📷 Toca para elegir una foto, o pégala con Ctrl+V</span>
+            <img id="photoPreview" alt="Foto adjunta" hidden>
+          </div>
+          <div class="photo-ocr-row" id="photoOcrRow" hidden>
+            <button type="button" class="ghost-btn" id="photoOcrBtn">🔎 Reconocer texto de la foto</button>
+            <span class="photo-ocr-status" id="photoOcrStatus"></span>
+          </div>
+          <textarea id="photoCaption" placeholder="Texto reconocido o comentario (opcional)…" hidden maxlength="4000"></textarea>
+          <div class="photo-actions" id="photoActions" hidden>
+            <button type="button" class="ghost-btn" id="photoRemove">Quitar foto</button>
+            <button type="button" id="photoSave">Guardar nota</button>
+          </div>
         </div>
         <ul class="note-list note-list-compact" id="noteList"></ul>
       </section>
@@ -2387,11 +2445,13 @@
   var viewMode = "day"; // "day" | "week" | "month" | "future"
   var futureCursor = startOfMonth(new Date()); // first month of the visible 6-month future log window
   var monthExpanded = false; // Agenda: false = tira de la semana, true = mes completo
-  var noteMode = "write"; // "write" | "draw"
+  var noteMode = "write"; // "write" | "draw" | "photo"
   var drawCtx = null;
   var drawing = false;
   var hasInk = false;
   var lastPt = null;
+  var photoDataUrl = null;
+  var ocrBusy = false;
   var editingTaskTimeId = null;
   var editingAgendaId = null;
   var taskFilterStatus = "pendiente";
@@ -3236,6 +3296,13 @@
         li.innerHTML = '<img class="note-drawing" alt="Nota escrita a mano">' +
           '<div class="note-foot"><span class="note-time"></span><button class="icon-btn" type="button">✕</button></div>';
         li.querySelector(".note-drawing").src = n.dataUrl;
+      } else if (n.type === "photo") {
+        li.innerHTML = '<img class="note-photo" alt="Foto guardada">' +
+          '<div class="note-body"></div><div class="note-foot"><span class="note-time"></span>' +
+          '<button class="icon-btn" type="button">✕</button></div>';
+        li.querySelector(".note-photo").src = n.dataUrl;
+        var body = li.querySelector(".note-body");
+        if (n.text) { body.textContent = n.text; } else { body.remove(); }
       } else {
         li.innerHTML = '<div class="note-body"></div><div class="note-foot"><span class="note-time"></span>' +
           '<button class="icon-btn" type="button">✕</button></div>';
@@ -4222,7 +4289,9 @@
 
     document.getElementById("tabWrite").addEventListener("click", function () { setNoteMode("write"); });
     document.getElementById("tabDraw").addEventListener("click", function () { setNoteMode("draw"); });
+    document.getElementById("tabPhoto").addEventListener("click", function () { setNoteMode("photo"); });
     wireDrawPad();
+    wirePhotoPanel();
 
     var activeHabitColor = "accent";
     document.getElementById("colorPicker").addEventListener("click", function (e) {
@@ -4345,9 +4414,11 @@
     noteMode = mode;
     document.getElementById("tabWrite").classList.toggle("is-active", mode === "write");
     document.getElementById("tabDraw").classList.toggle("is-active", mode === "draw");
+    document.getElementById("tabPhoto").classList.toggle("is-active", mode === "photo");
     document.getElementById("noteForm").hidden = mode !== "write";
     document.getElementById("drawPad").hidden = mode !== "draw";
     document.getElementById("drawToolbar").hidden = mode !== "draw";
+    document.getElementById("photoPanel").hidden = mode !== "photo";
     if (mode === "draw") setupDrawCanvas();
   }
 
@@ -4422,6 +4493,165 @@
       var dataUrl = canvas.toDataURL("image/png");
       state.notes.push({ id: newId(), type: "drawing", dataUrl: dataUrl, ts: Date.now() });
       setupDrawCanvas();
+      renderAll(); scheduleSave();
+    });
+  }
+
+  // ---- Notes: fotos (elegir archivo, pegar con Ctrl+V, reconocer texto) ----
+
+  var TESSERACT_SRC = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+  var tesseractLoadPromise = null;
+
+  // El lector de texto pesa varios MB, así que solo se descarga la primera
+  // vez que alguien aprieta "Reconocer texto", no al abrir la app.
+  function loadTesseract() {
+    if (window.Tesseract) return Promise.resolve(window.Tesseract);
+    if (tesseractLoadPromise) return tesseractLoadPromise;
+    tesseractLoadPromise = new Promise(function (resolve, reject) {
+      var script = document.createElement("script");
+      script.src = TESSERACT_SRC;
+      script.onload = function () { resolve(window.Tesseract); };
+      script.onerror = function () { tesseractLoadPromise = null; reject(new Error("no se pudo cargar el lector de texto")); };
+      document.head.appendChild(script);
+    });
+    return tesseractLoadPromise;
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(reader.error); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Achica cualquier foto (las de la cámara pueden pesar 5-10 MB) a un
+  // JPEG liviano, para no llenar la base de datos con fotos gigantes.
+  function compressImageToDataUrl(source, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, maxDim / Math.max(w, h));
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(w * scale));
+        canvas.height = Math.max(1, Math.round(h * scale));
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = function () { reject(new Error("no se pudo leer la imagen")); };
+      img.src = source;
+    });
+  }
+
+  function resetPhotoPanel() {
+    photoDataUrl = null;
+    ocrBusy = false;
+    document.getElementById("photoDrop").classList.remove("has-image");
+    document.getElementById("photoDropLabel").hidden = false;
+    var preview = document.getElementById("photoPreview");
+    preview.hidden = true;
+    preview.src = "";
+    document.getElementById("photoOcrRow").hidden = true;
+    document.getElementById("photoOcrStatus").textContent = "";
+    document.getElementById("photoOcrBtn").disabled = false;
+    var caption = document.getElementById("photoCaption");
+    caption.hidden = true;
+    caption.value = "";
+    document.getElementById("photoActions").hidden = true;
+    document.getElementById("photoInput").value = "";
+  }
+
+  function setPhotoPreview(dataUrl) {
+    photoDataUrl = dataUrl;
+    document.getElementById("photoDrop").classList.add("has-image");
+    document.getElementById("photoDropLabel").hidden = true;
+    var preview = document.getElementById("photoPreview");
+    preview.src = dataUrl;
+    preview.hidden = false;
+    document.getElementById("photoOcrRow").hidden = false;
+    document.getElementById("photoOcrStatus").textContent = "";
+    document.getElementById("photoCaption").hidden = false;
+    document.getElementById("photoActions").hidden = false;
+  }
+
+  function handlePhotoBlob(blob) {
+    fileToDataUrl(blob).then(function (raw) {
+      return compressImageToDataUrl(raw, 1600, 0.75);
+    }).then(function (dataUrl) {
+      setNoteMode("photo");
+      setPhotoPreview(dataUrl);
+    }).catch(function () {
+      alert("No se pudo cargar esa foto. Prueba con otra.");
+    });
+  }
+
+  function wirePhotoPanel() {
+    var drop = document.getElementById("photoDrop");
+    var input = document.getElementById("photoInput");
+
+    drop.addEventListener("click", function () { input.click(); });
+    drop.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); }
+    });
+
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      if (file) handlePhotoBlob(file);
+    });
+
+    // Cortar y pegar: una imagen copiada (de otra app, una captura de
+    // pantalla, etc.) con Ctrl+V se guarda directo como nota de foto.
+    document.addEventListener("paste", function (e) {
+      var items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.indexOf("image/") === 0) {
+          var blob = items[i].getAsFile();
+          if (blob) { e.preventDefault(); handlePhotoBlob(blob); }
+          return;
+        }
+      }
+    });
+
+    document.getElementById("photoRemove").addEventListener("click", function () {
+      resetPhotoPanel();
+    });
+
+    document.getElementById("photoOcrBtn").addEventListener("click", function () {
+      if (!photoDataUrl || ocrBusy) return;
+      ocrBusy = true;
+      var status = document.getElementById("photoOcrStatus");
+      var btn = document.getElementById("photoOcrBtn");
+      btn.disabled = true;
+      status.textContent = "Cargando lector de texto…";
+      loadTesseract().then(function (Tesseract) {
+        status.textContent = "Leyendo la foto… puede tardar unos segundos";
+        return Tesseract.recognize(photoDataUrl, "spa+eng");
+      }).then(function (result) {
+        var text = ((result && result.data && result.data.text) || "").trim();
+        var caption = document.getElementById("photoCaption");
+        if (text) {
+          caption.value = caption.value ? caption.value + "\n\n" + text : text;
+          status.textContent = "Texto reconocido. Revísalo y corrígelo si hace falta.";
+        } else {
+          status.textContent = "No se encontró texto legible en la foto.";
+        }
+        ocrBusy = false;
+        btn.disabled = false;
+      }).catch(function () {
+        status.textContent = "No se pudo leer el texto (revisa tu conexión a internet).";
+        ocrBusy = false;
+        btn.disabled = false;
+      });
+    });
+
+    document.getElementById("photoSave").addEventListener("click", function () {
+      if (!photoDataUrl) return;
+      var text = document.getElementById("photoCaption").value.trim();
+      state.notes.push({ id: newId(), type: "photo", dataUrl: photoDataUrl, text: text, ts: Date.now() });
+      resetPhotoPanel();
       renderAll(); scheduleSave();
     });
   }
