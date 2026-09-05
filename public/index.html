@@ -376,22 +376,20 @@
   .board .col-agenda,
   .board .col-tasks { display: none; }
 
-  .board.view-week .col-week { display: flex; grid-column: span 2; }
-  .board.view-week .col-notes { display: flex; }
+  .board.view-week .col-week { display: flex; grid-column: 1 / -1; }
 
   .board.view-day {
     /* Tareas necesita más aire para no cortar el texto en dos líneas;
-       Progreso/Nota son widgets compactos y no lo necesitan tanto. */
+       Progreso es un widget compacto y no lo necesita tanto. */
     grid-template-columns: 1.05fr 1.25fr 0.85fr;
     grid-template-areas:
       "agenda top3 progress"
-      "agenda tasks notes";
+      "agenda tasks tasks";
   }
   .board.view-day .col-agenda { display: flex; grid-area: agenda; }
   .board.view-day .col-top3 { display: flex; grid-area: top3; }
   .board.view-day .col-progress { display: flex; grid-area: progress; }
   .board.view-day .col-tasks { display: flex; grid-area: tasks; }
-  .board.view-day .col-notes { display: flex; grid-area: notes; }
 
   @media (max-width: 1100px) {
     .board.view-day {
@@ -399,8 +397,7 @@
       grid-template-areas:
         "agenda top3"
         "agenda progress"
-        "tasks tasks"
-        "notes notes";
+        "tasks tasks";
     }
   }
 
@@ -409,7 +406,7 @@
     .board.view-week .col-week { grid-column: auto; }
     .board.view-day {
       grid-template-columns: 1fr;
-      grid-template-areas: "agenda" "top3" "progress" "tasks" "notes";
+      grid-template-areas: "agenda" "top3" "progress" "tasks";
     }
   }
 
@@ -1113,7 +1110,6 @@
     font-size: 0.72rem;
     color: var(--muted);
   }
-  .note-list-compact { max-height: 168px; overflow-y: auto; padding-right: 2px; }
 
   /* Forms */
   .add-form {
@@ -1290,6 +1286,38 @@
     background: var(--surface);
     border: 1px solid var(--border);
     margin-bottom: 6px;
+  }
+
+  /* Notas: pizarrón donde se "cuelgan" las notas sueltas */
+  .notas-sub { color: var(--muted); font-size: 0.88rem; margin: -6px 0 6px; max-width: 60ch; }
+
+  .note-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 28px 20px;
+    padding: 20px 10px 36px;
+  }
+  .note-board .empty-state { grid-column: 1 / -1; }
+  .note-board .note-item {
+    position: relative;
+    box-shadow: var(--shadow);
+  }
+  .note-board .note-item:nth-child(4n+1) { transform: rotate(-1.6deg); background: var(--accent-soft); }
+  .note-board .note-item:nth-child(4n+2) { transform: rotate(1.3deg); background: var(--amber-soft); }
+  .note-board .note-item:nth-child(4n+3) { transform: rotate(-0.9deg); background: var(--blue-soft); }
+  .note-board .note-item:nth-child(4n+4) { transform: rotate(1.7deg); background: var(--violet-soft); }
+  .note-board .note-item::before {
+    content: "📌";
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.15rem;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.28));
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .note-board .note-item { transition: transform 150ms ease; }
+    .note-board .note-item:hover, .note-board .note-item:focus-within { transform: rotate(0deg) translateY(-3px); z-index: 2; }
   }
 
   /* Habit tracker */
@@ -2068,6 +2096,7 @@
       <button type="button" class="nav-item is-active" id="navHoy"><span class="nav-icon">☀</span><span class="nav-label">Hoy</span></button>
       <button type="button" class="nav-item" id="navCalendario"><span class="nav-icon">📅</span><span class="nav-label">Calendario</span></button>
       <button type="button" class="nav-item" id="navBitacora"><span class="nav-icon">📝</span><span class="nav-label">Bitácora</span></button>
+      <button type="button" class="nav-item" id="navNotas"><span class="nav-icon">📌</span><span class="nav-label">Notas</span></button>
       <button type="button" class="nav-item" id="navHabitos"><span class="nav-icon">◷</span><span class="nav-label">Hábitos</span></button>
       <button type="button" class="nav-item" id="navObjetivos"><span class="nav-icon">◎</span><span class="nav-label">Objetivos</span></button>
       <button type="button" class="nav-item" id="navAjustes"><span class="nav-icon">⚙</span><span class="nav-label">Ajustes</span></button>
@@ -2204,46 +2233,6 @@
         </form>
         <ul class="task-list" id="taskList"></ul>
       </section>
-
-      <section class="col col-notes" aria-label="Nota rápida">
-        <div class="col-head"><h2>Nota rápida</h2></div>
-        <div class="note-tabs">
-          <button type="button" class="note-tab is-active" id="tabWrite">Escribir</button>
-          <button type="button" class="note-tab" id="tabDraw">A mano</button>
-          <button type="button" class="note-tab" id="tabPhoto">Foto</button>
-        </div>
-        <form class="add-form" id="noteForm">
-          <textarea id="noteText" placeholder="Escribe algo rápido… (o pega texto con Ctrl+V)" required maxlength="600"></textarea>
-          <button type="submit">Guardar nota</button>
-        </form>
-        <div class="draw-pad" id="drawPad" hidden>
-          <canvas id="drawCanvas"></canvas>
-        </div>
-        <div class="draw-toolbar" id="drawToolbar" hidden>
-          <span class="draw-hint">Escribe con el lápiz S Pen</span>
-          <span style="display:flex; gap:6px;">
-            <button type="button" class="ghost-btn" id="drawClear">Borrar</button>
-            <button type="button" class="ghost-btn" id="drawSave">Guardar nota</button>
-          </span>
-        </div>
-        <div class="photo-panel" id="photoPanel" hidden>
-          <input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
-          <div class="photo-drop" id="photoDrop" tabindex="0" role="button">
-            <span id="photoDropLabel">📷 Toca para elegir una foto, o pégala con Ctrl+V</span>
-            <img id="photoPreview" alt="Foto adjunta" hidden>
-          </div>
-          <div class="photo-ocr-row" id="photoOcrRow" hidden>
-            <button type="button" class="ghost-btn" id="photoOcrBtn">🔎 Reconocer texto de la foto</button>
-            <span class="photo-ocr-status" id="photoOcrStatus"></span>
-          </div>
-          <textarea id="photoCaption" placeholder="Texto reconocido o comentario (opcional)…" hidden maxlength="4000"></textarea>
-          <div class="photo-actions" id="photoActions" hidden>
-            <button type="button" class="ghost-btn" id="photoRemove">Quitar foto</button>
-            <button type="button" id="photoSave">Guardar nota</button>
-          </div>
-        </div>
-        <ul class="note-list note-list-compact" id="noteList"></ul>
-      </section>
     </main>
 
     <section class="col habits-section" id="habitsSection" aria-label="Mis hábitos">
@@ -2377,6 +2366,47 @@
       </form>
 
       <div class="goal-list" id="goalList"></div>
+    </section>
+
+    <section class="col notas-section" id="notasSection" aria-label="Notas" hidden>
+      <div class="col-head"><h2>Notas</h2></div>
+      <p class="notas-sub">Ideas sueltas, recordatorios, algo que fotografiaste para no perderlo — cuélgalo aquí como en un pizarrón.</p>
+      <div class="note-tabs">
+        <button type="button" class="note-tab is-active" id="tabWrite">Escribir</button>
+        <button type="button" class="note-tab" id="tabDraw">A mano</button>
+        <button type="button" class="note-tab" id="tabPhoto">Foto</button>
+      </div>
+      <form class="add-form" id="noteForm">
+        <textarea id="noteText" placeholder="Escribe algo rápido… (o pega texto con Ctrl+V)" required maxlength="600"></textarea>
+        <button type="submit">Guardar nota</button>
+      </form>
+      <div class="draw-pad" id="drawPad" hidden>
+        <canvas id="drawCanvas"></canvas>
+      </div>
+      <div class="draw-toolbar" id="drawToolbar" hidden>
+        <span class="draw-hint">Escribe con el lápiz S Pen</span>
+        <span style="display:flex; gap:6px;">
+          <button type="button" class="ghost-btn" id="drawClear">Borrar</button>
+          <button type="button" class="ghost-btn" id="drawSave">Guardar nota</button>
+        </span>
+      </div>
+      <div class="photo-panel" id="photoPanel" hidden>
+        <input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
+        <div class="photo-drop" id="photoDrop" tabindex="0" role="button">
+          <span id="photoDropLabel">📷 Toca para elegir una foto, o pégala con Ctrl+V</span>
+          <img id="photoPreview" alt="Foto adjunta" hidden>
+        </div>
+        <div class="photo-ocr-row" id="photoOcrRow" hidden>
+          <button type="button" class="ghost-btn" id="photoOcrBtn">🔎 Reconocer texto de la foto</button>
+          <span class="photo-ocr-status" id="photoOcrStatus"></span>
+        </div>
+        <textarea id="photoCaption" placeholder="Texto reconocido o comentario (opcional)…" hidden maxlength="4000"></textarea>
+        <div class="photo-actions" id="photoActions" hidden>
+          <button type="button" class="ghost-btn" id="photoRemove">Quitar foto</button>
+          <button type="button" id="photoSave">Guardar nota</button>
+        </div>
+      </div>
+      <ul class="note-board" id="noteList"></ul>
     </section>
   </div>
 
@@ -3975,12 +4005,10 @@
       renderTop3();
       renderProgress();
       renderTasks();
-      renderNotes();
       renderHabits();
       renderWeekQuickView();
     } else if (viewMode === "week") {
       renderWeekPanorama();
-      renderNotes();
       renderHabits();
     } else if (viewMode === "month") {
       renderMonthView();
@@ -3990,6 +4018,8 @@
       renderJournal();
     } else if (viewMode === "objetivos") {
       renderGoals();
+    } else if (viewMode === "notas") {
+      renderNotes();
     }
   }
 
@@ -4015,9 +4045,10 @@
     document.getElementById("futureLogSection").hidden = mode !== "future";
     document.getElementById("bitacoraSection").hidden = mode !== "bitacora";
     document.getElementById("objetivosSection").hidden = mode !== "objetivos";
+    document.getElementById("notasSection").hidden = mode !== "notas";
 
     // El toggle Día/Semana/Mes/Planificar solo aplica a esas 4 vistas; la
-    // Bitácora y Objetivos se abren únicamente desde el menú lateral.
+    // Bitácora, Notas y Objetivos se abren únicamente desde el menú lateral.
     document.getElementById("viewToggle").hidden = !isCoreView;
 
     document.getElementById("viewDayBtn").classList.toggle("is-active", mode === "day");
@@ -4028,6 +4059,7 @@
     document.getElementById("navHoy").classList.toggle("is-active", mode === "day");
     document.getElementById("navCalendario").classList.toggle("is-active", mode === "month");
     document.getElementById("navBitacora").classList.toggle("is-active", mode === "bitacora");
+    document.getElementById("navNotas").classList.toggle("is-active", mode === "notas");
     document.getElementById("navObjetivos").classList.toggle("is-active", mode === "objetivos");
 
     renderAll();
@@ -4351,6 +4383,7 @@
     document.getElementById("navHoy").addEventListener("click", function () { setViewMode("day"); });
     document.getElementById("navCalendario").addEventListener("click", function () { setViewMode("month"); });
     document.getElementById("navBitacora").addEventListener("click", function () { setViewMode("bitacora"); });
+    document.getElementById("navNotas").addEventListener("click", function () { setViewMode("notas"); });
     document.getElementById("navHabitos").addEventListener("click", function () {
       setViewMode("day"); scrollToCard("#habitsSection");
     });
@@ -4372,6 +4405,7 @@
       document.getElementById("fabMenu").hidden = true;
       document.getElementById("fabAdd").setAttribute("aria-expanded", "false");
       if (target === "objetivo") { if (viewMode !== "objetivos") setViewMode("objetivos"); }
+      else if (target === "note") { if (viewMode !== "notas") setViewMode("notas"); }
       else if (viewMode !== "day") setViewMode("day");
       requestAnimationFrame(function () {
         if (target === "agenda") {
@@ -4384,7 +4418,6 @@
           document.getElementById("taskText").focus();
         } else if (target === "note") {
           setNoteMode("write");
-          document.querySelector(".col-notes").scrollIntoView({ behavior: "smooth", block: "start" });
           document.getElementById("noteText").focus();
         } else if (target === "habit") {
           document.getElementById("habitFormWrap").hidden = false;

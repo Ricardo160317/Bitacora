@@ -45,9 +45,9 @@ Abre esa URL en cualquier navegador (tablet, celular o PC), escribe la contrase�
 
 Igual que antes: abre la URL en Chrome → menú de tres puntos (⋮) → **"Instalar aplicación"**.
 
-## Notas rápidas: texto, a mano o foto
+## Notas: un pizarrón para lo suelto (texto, a mano o foto)
 
-En "Nota rápida" hay tres pestañas: **Escribir** (texto normal, y puedes pegar texto copiado con Ctrl+V), **A mano** (dibujo/escritura con el S Pen) y **Foto**. En la pestaña Foto puedes:
+En el menú lateral, "📌 Notas" abre un pizarrón donde se van colgando las notas sueltas — ideas, recordatorios, algo que fotografiaste — sin importar el día. Tiene tres pestañas para agregar: **Escribir** (texto normal, y puedes pegar texto copiado con Ctrl+V), **A mano** (dibujo/escritura con el S Pen) y **Foto**. En la pestaña Foto puedes:
 
 - Tocar el recuadro para elegir una foto de la galería o tomarla con la cámara.
 - Pegar una imagen copiada con Ctrl+V (por ejemplo una captura de pantalla) directo en el recuadro.
