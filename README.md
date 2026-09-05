@@ -45,6 +45,16 @@ Abre esa URL en cualquier navegador (tablet, celular o PC), escribe la contrase�
 
 Igual que antes: abre la URL en Chrome → menú de tres puntos (⋮) → **"Instalar aplicación"**.
 
+## Notas rápidas: texto, a mano o foto
+
+En "Nota rápida" hay tres pestañas: **Escribir** (texto normal, y puedes pegar texto copiado con Ctrl+V), **A mano** (dibujo/escritura con el S Pen) y **Foto**. En la pestaña Foto puedes:
+
+- Tocar el recuadro para elegir una foto de la galería o tomarla con la cámara.
+- Pegar una imagen copiada con Ctrl+V (por ejemplo una captura de pantalla) directo en el recuadro.
+- Apretar "Reconocer texto de la foto" para que intente leer el texto que aparece en la imagen (recibos, carteles, apuntes fotografiados, etc.) y lo ponga en un cuadro de texto editable antes de guardar. Esto necesita conexión a internet la primera vez (descarga el lector de texto) y funciona mejor con fotos nítidas y bien iluminadas.
+
+Las fotos se guardan comprimidas para no llenar la base de datos.
+
 ## Notas importantes
 
 - La contraseña (`APP_PASSWORD`) es compartida — no hay usuarios separados, es solo una llave para que nadie más entre a ver tu agenda. Si алgo se ve raro, cambia esa variable en Railway y todos los que la tuvieran guardada quedan afuera hasta que la actualices.

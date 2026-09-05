@@ -11,7 +11,7 @@ const { Pool } = require("pg");
 
 const app = express();
 app.set("trust proxy", 1); // Railway está detrás de un proxy: necesario para saber si la conexión es https
-app.use(express.json({ limit: "8mb" })); // las notas a mano (S Pen) pueden pesar varios MB
+app.use(express.json({ limit: "25mb" })); // las notas a mano (S Pen) y las fotos adjuntas pueden pesar varios MB
 app.use(cookieParser());
 
 const PORT = process.env.PORT || 3000;
