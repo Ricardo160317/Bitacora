@@ -2044,10 +2044,15 @@
   /* ---------------------------------------------------------------- */
 
   @media (max-width: 1024px) {
-    .sidebar { width: 76px; padding: 22px 10px; align-items: center; }
+    /* En tablet la barra lateral se angosta a solo íconos; sin la
+       etiqueta al lado, un ícono nuevo (como 📌 Notas) es invisible
+       hasta que alguien lo reconoce por pura memoria. Por eso el texto
+       se achica y baja debajo del ícono en vez de desaparecer del todo. */
+    .sidebar { width: 92px; padding: 18px 8px; align-items: center; }
     .sidebar-brand { justify-content: center; }
-    .brand-text, .nav-label, .sidebar-quote { display: none; }
-    .nav-item { justify-content: center; padding: 10px; }
+    .brand-text, .sidebar-quote { display: none; }
+    .nav-item { flex-direction: column; gap: 4px; padding: 8px 4px; }
+    .nav-label { display: block; white-space: normal; text-align: center; font-size: 0.62rem; line-height: 1.15; }
     .main-content { padding: 22px 18px 96px; }
   }
 
@@ -2093,13 +2098,13 @@
       <span class="brand-text"><span class="brand-line1">BITÁCORA</span><span class="brand-line2">DE FREDDY</span></span>
     </div>
     <nav class="sidebar-nav">
-      <button type="button" class="nav-item is-active" id="navHoy"><span class="nav-icon">☀</span><span class="nav-label">Hoy</span></button>
-      <button type="button" class="nav-item" id="navCalendario"><span class="nav-icon">📅</span><span class="nav-label">Calendario</span></button>
-      <button type="button" class="nav-item" id="navBitacora"><span class="nav-icon">📝</span><span class="nav-label">Bitácora</span></button>
-      <button type="button" class="nav-item" id="navNotas"><span class="nav-icon">📌</span><span class="nav-label">Notas</span></button>
-      <button type="button" class="nav-item" id="navHabitos"><span class="nav-icon">◷</span><span class="nav-label">Hábitos</span></button>
-      <button type="button" class="nav-item" id="navObjetivos"><span class="nav-icon">◎</span><span class="nav-label">Objetivos</span></button>
-      <button type="button" class="nav-item" id="navAjustes"><span class="nav-icon">⚙</span><span class="nav-label">Ajustes</span></button>
+      <button type="button" class="nav-item is-active" id="navHoy" title="Hoy"><span class="nav-icon">☀</span><span class="nav-label">Hoy</span></button>
+      <button type="button" class="nav-item" id="navCalendario" title="Calendario"><span class="nav-icon">📅</span><span class="nav-label">Calendario</span></button>
+      <button type="button" class="nav-item" id="navBitacora" title="Bitácora"><span class="nav-icon">📝</span><span class="nav-label">Bitácora</span></button>
+      <button type="button" class="nav-item" id="navNotas" title="Notas"><span class="nav-icon">📌</span><span class="nav-label">Notas</span></button>
+      <button type="button" class="nav-item" id="navHabitos" title="Hábitos"><span class="nav-icon">◷</span><span class="nav-label">Hábitos</span></button>
+      <button type="button" class="nav-item" id="navObjetivos" title="Objetivos"><span class="nav-icon">◎</span><span class="nav-label">Objetivos</span></button>
+      <button type="button" class="nav-item" id="navAjustes" title="Ajustes"><span class="nav-icon">⚙</span><span class="nav-label">Ajustes</span></button>
     </nav>
     <p class="sidebar-quote" id="sidebarQuote"></p>
   </aside>
