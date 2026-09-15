@@ -2,45 +2,45 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What this is
+## Qué es esto
 
-Bitácora Diaria: a personal daily-planner web app (agenda, tasks, habits, notes, goals, journal) for a single user, in Spanish. It's a Node/Express server backed by Postgres, serving a single-page vanilla-JS frontend. No build step, no frontend framework, no bundler — the whole client app is one HTML file.
+Bitácora Diaria: una app web de agenda personal (agenda, tareas, hábitos, notas, objetivos, diario) para un solo usuario, en español. Es un servidor Node/Express respaldado por Postgres, que sirve un frontend de una sola página en JavaScript puro. Sin paso de build, sin framework de frontend, sin bundler — toda la app cliente es un único archivo HTML.
 
-## Commands
+## Comandos
 
 ```bash
-npm install     # install server dependencies
-npm start        # run the server (node server.js), serves on $PORT or 3000
+npm install     # instala las dependencias del servidor
+npm start        # arranca el servidor (node server.js), escucha en $PORT o 3000
 ```
 
-There is no test suite, linter, or build step in this repo. Required env vars for the server to function: `APP_PASSWORD` (shared login password), `SESSION_SECRET` (HMAC signing key for session cookies), `DATABASE_URL` (Postgres connection string). Without them the server still starts but logs warnings and login/data endpoints won't work correctly. Run locally against any reachable Postgres instance by setting these three env vars before `npm start`.
+No hay suite de tests, linter ni paso de build en este repo. Variables de entorno requeridas para que el servidor funcione: `APP_PASSWORD` (contraseña compartida de login), `SESSION_SECRET` (clave para firmar las cookies de sesión con HMAC), `DATABASE_URL` (cadena de conexión a Postgres). Sin ellas el servidor arranca igual pero registra avisos y el login/los endpoints de datos no funcionan bien. Para correrlo en local, apunta a cualquier instancia de Postgres alcanzable definiendo esas tres variables antes de `npm start`.
 
-To iterate on the frontend, just edit `public/index.html`/`public/sw.js` and refresh the browser — the server serves `public/` as static files with no build/transpile step.
+Para iterar en el frontend, basta con editar `public/index.html`/`public/sw.js` y recargar el navegador — el servidor sirve `public/` como archivos estáticos, sin transpilación ni build.
 
-## Architecture
+## Arquitectura
 
-**Backend (`server.js`, ~150 lines):** a thin Express app with almost no business logic. It has exactly two data endpoints:
-- `GET /api/state` — returns the entire app state as one JSON blob
-- `PUT /api/state` — overwrites the entire app state with the JSON body
+**Backend (`server.js`, ~150 líneas):** una app Express delgada, casi sin lógica de negocio. Tiene exactamente dos endpoints de datos:
+- `GET /api/state` — devuelve todo el estado de la app como un único blob JSON
+- `PUT /api/state` — sobrescribe todo el estado de la app con el cuerpo JSON recibido
 
-State is stored as a single JSONB column (`app_state` table, always `id = 1` — one row for the one user). There's no per-entity CRUD API; the client owns all state shape/logic and just round-trips the whole document. Auth is a shared password (`APP_PASSWORD`) compared to a signed, expiring cookie (HMAC-SHA256 over a base64url JSON payload, verified with `crypto.timingSafeEqual`) — no user accounts, no session store, no external auth library.
+El estado se guarda en una sola columna JSONB (tabla `app_state`, siempre `id = 1` — una fila para el único usuario). No hay una API CRUD por entidad; el cliente es dueño de toda la forma/lógica del estado y simplemente va y viene con el documento completo. La autenticación es una contraseña compartida (`APP_PASSWORD`) comparada contra una cookie firmada y con expiración (HMAC-SHA256 sobre un payload JSON en base64url, verificado con `crypto.timingSafeEqual`) — sin cuentas de usuario, sin almacén de sesiones, sin librería externa de auth.
 
-**Frontend (`public/index.html`, ~4800 lines: markup + `<style>` + `<script>` all in one file):**
-- Single IIFE, no modules, no framework. One in-memory `state` object (`tasks`, `notes`, `agenda`, `habits`, `futureLog`, `journal`, `goals`, `top3`, `showDone`) is the source of truth, loaded via `fetchState()`/`applyState()` on boot and pushed back via `doSave()` (debounced through `scheduleSave()`, 500ms) on every mutation.
-- Rendering is manual/imperative, not reactive: each screen area has its own `renderX()` function (e.g. `renderAgenda`, `renderTasks`, `renderHabits`, `renderMonthView`, `renderFutureLog`, `renderJournal`, `renderGoals`, `renderNotes`). `renderAll()` dispatches to the subset of `renderX()` calls relevant to the current `viewMode`, and is called after every state mutation.
-- Navigation is a single `viewMode` string (`"day" | "week" | "month" | "future" | "bitacora" | "objetivos" | "notas"`) toggled by `setViewMode()`, which shows/hides pre-existing DOM sections (`#board`, `#monthSummarySection`, `#futureLogSection`, `#bitacoraSection`, `#objetivosSection`, `#notasSection`, etc.) rather than mounting/unmounting anything.
-- All event wiring happens once in `wireEvents()` (delegated listeners), called once from `bootApp()`.
-- Auth flow: `init()` calls `fetchState()`; a 401 shows the login overlay (`showLogin()`), success calls `bootApp()` which wires events, sets the default view, and reveals `#appRoot` (`showApp()`).
-- Notes support three input modes (`noteMode`: `write`/`draw`/`photo`) — free text, S Pen/canvas drawing, and photo capture with optional OCR via Tesseract.js (loaded lazily from a CDN via `loadTesseract()`, only when the user asks to recognize text in a photo).
-- Theming is CSS custom properties on `:root`, switched via `prefers-color-scheme` and an optional `data-theme` override; no CSS framework.
-- `public/sw.js` is a minimal service worker: cache-first for static assets, and explicitly never caches `/api/*` requests (so data is always fetched fresh across devices).
+**Frontend (`public/index.html`, ~4800 líneas: markup + `<style>` + `<script>` todo en un solo archivo):**
+- Un único IIFE, sin módulos, sin framework. Un objeto `state` en memoria (`tasks`, `notes`, `agenda`, `habits`, `futureLog`, `journal`, `goals`, `top3`, `showDone`) es la fuente de verdad, cargado vía `fetchState()`/`applyState()` al arrancar y enviado de vuelta vía `doSave()` (con debounce a través de `scheduleSave()`, 500ms) en cada mutación.
+- El renderizado es manual/imperativo, no reactivo: cada área de la pantalla tiene su propia función `renderX()` (p. ej. `renderAgenda`, `renderTasks`, `renderHabits`, `renderMonthView`, `renderFutureLog`, `renderJournal`, `renderGoals`, `renderNotes`). `renderAll()` despacha al subconjunto de `renderX()` que corresponde al `viewMode` actual, y se llama después de cada mutación de estado.
+- La navegación es un único string `viewMode` (`"day" | "week" | "month" | "future" | "bitacora" | "objetivos" | "notas"`) que cambia con `setViewMode()`, la cual muestra/oculta secciones del DOM ya existentes (`#board`, `#monthSummarySection`, `#futureLogSection`, `#bitacoraSection`, `#objetivosSection`, `#notasSection`, etc.) en vez de montar/desmontar nada.
+- Todo el cableado de eventos ocurre una sola vez en `wireEvents()` (listeners delegados), llamado una vez desde `bootApp()`.
+- Flujo de autenticación: `init()` llama a `fetchState()`; un 401 muestra el overlay de login (`showLogin()`), y si tiene éxito llama a `bootApp()`, que cablea los eventos, fija la vista por defecto y muestra `#appRoot` (`showApp()`).
+- Las notas soportan tres modos de entrada (`noteMode`: `write`/`draw`/`photo`) — texto libre, dibujo con S Pen/canvas, y captura de foto con OCR opcional vía Tesseract.js (cargado de forma diferida desde un CDN con `loadTesseract()`, solo cuando el usuario pide reconocer texto en una foto).
+- El theming son variables CSS personalizadas en `:root`, que cambian según `prefers-color-scheme` y un override opcional con `data-theme`; sin framework de CSS.
+- `public/sw.js` es un service worker mínimo: cache-first para los archivos estáticos, y explícitamente nunca cachea las llamadas a `/api/*` (para que los datos siempre se lean frescos entre dispositivos).
 
-**Data model conventions worth knowing before editing:**
-- Tasks/agenda entries carry an `area` field validated against the `AREAS` map (operación, mantenimiento, calidad, personas, administración, or none); future-log entries carry a `category` validated against `FUTURE_CATEGORIES`. `applyState()` sanitizes/defaults any field that doesn't match these maps or is missing (important when adding new fields — old stored documents won't have them).
-- Incomplete tasks whose `day` is in the past get rolled forward to today on every load (`rolloverTasks()`), then saved back.
-- Since the entire state is one JSONB blob with `PUT` overwriting it wholesale, there's no server-side merge/conflict handling — the last client to save wins.
+**Convenciones del modelo de datos que conviene conocer antes de editar:**
+- Las tareas y entradas de agenda llevan un campo `area` validado contra el mapa `AREAS` (operación, mantenimiento, calidad, personas, administración, o ninguna); las entradas del future-log llevan un `category` validado contra `FUTURE_CATEGORIES`. `applyState()` sanea/pone valores por defecto en cualquier campo que no coincida con estos mapas o que falte (importante al agregar campos nuevos — los documentos guardados antiguos no los van a tener).
+- Las tareas sin terminar cuyo `day` quedó en el pasado se mueven a hoy en cada carga (`rolloverTasks()`), y ese cambio se guarda de vuelta.
+- Como todo el estado es un solo blob JSONB y `PUT` lo sobrescribe entero, no hay manejo de merge/conflictos del lado del servidor — gana el último cliente que guarda.
 
-## Notes
+## Notas
 
-- All user-facing strings and comments in the existing code are in Spanish (the app is for a single named user, Freddy Hoyos); match that convention when adding UI text.
-- Photos are compressed client-side (`compressImageToDataUrl`) before being stored in the state blob, to keep the single JSONB document from growing unbounded.
+- Todos los textos visibles al usuario y los comentarios del código existente están en español (la app es para un único usuario, Freddy Hoyos); sigue esa convención al agregar texto de interfaz.
+- Las fotos se comprimen del lado del cliente (`compressImageToDataUrl`) antes de guardarse en el blob de estado, para que el documento JSONB no crezca sin control.
